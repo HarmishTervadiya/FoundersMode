@@ -3,9 +3,10 @@ import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
-import { useRouter } from 'expo-router';
-import { Key, User } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { useVaultStore } from '@/store/vaultStore';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AlertCircle, Key, User } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,9 +39,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function VaultKeyScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const { key: themeKey } = useTheme();
-    const { upsertProfile, checkUsernameUnique } = useUserStore();
+    const { upsertProfile, checkUsernameUnique, profile } = useUserStore();
     const { user } = useAuthStore();
+    const { validateVaultKey, isValidating } = useVaultStore();
 
     // Get icon color from Colors constant
     const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
@@ -53,6 +56,15 @@ export default function VaultKeyScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [showUsernameModal, setShowUsernameModal] = useState(false);
     const [usernameError, setUsernameError] = useState('');
+    const [keyError, setKeyError] = useState('');
+
+    // Check for error from migration screen
+    useEffect(() => {
+        if (params.error) {
+            setKeyError(params.error as string);
+            setStep('LEGACY_INPUT');
+        }
+    }, [params.error]);
 
     // Validate username format
     const validateUsername = (name: string): string | null => {
@@ -145,22 +157,40 @@ export default function VaultKeyScreen() {
             return;
         }
 
-        // Legacy key acts as username lookup
-        const legacyUsername = `VK_${legacyKey.trim().toUpperCase()}`;
-
+        setKeyError('');
         setIsLoading(true);
-        try {
-            // For legacy keys, we just set the username directly
-            await upsertProfile(user.id, { username: legacyUsername });
 
-            Alert.alert(
-                "Legacy Key Accepted",
-                `Your vault key ${legacyKey} has been linked.`,
-                [{ text: "Enter Facility", onPress: () => router.replace('/(tabs)') }]
-            );
+        try {
+            // Step 1: Validate vault key
+            console.log('[VaultKey] Submitting legacy key:', legacyKey);
+            console.log('[VaultKey] Key length:', legacyKey.length);
+            const validation = await validateVaultKey(legacyKey);
+            console.log('[VaultKey] Validation result:', validation);
+
+            if (!validation.exists) {
+                setKeyError('Invalid vault key. Please check and try again.');
+                setIsLoading(false);
+                return;
+            }
+
+            if (validation.isClaimed) {
+                setKeyError('This vault key has already been claimed by another user.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Step 2: Navigate to migration screen
+            router.replace({
+                pathname: '/auth/migration',
+                params: {
+                    secretKey: legacyKey.toUpperCase().trim(),
+                    userId: user.id,
+                    currentLevel: (profile?.level || 1).toString(),
+                },
+            });
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Failed to link legacy key.");
+            setKeyError('Failed to validate vault key. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -227,20 +257,32 @@ export default function VaultKeyScreen() {
                                 <Text className="text-sm font-medium mb-3 tracking-wider text-center text-text-primary">[ ENTER YOUR LEGACY KEY ]</Text>
                                 <TextInput
                                     value={legacyKey}
-                                    onChangeText={(text) => setLegacyKey(text.toUpperCase())}
-                                    placeholder="K8X-29L"
+                                    onChangeText={(text) => {
+                                        setLegacyKey(text.toUpperCase());
+                                        setKeyError(''); // Clear error on input change
+                                    }}
+                                    placeholder="1BIZ-HR"
                                     placeholderTextColor={iconColor}
+                                    autoCapitalize="characters"
+                                    autoCorrect={false}
                                     className="w-full border-2 text-center text-2xl font-mono tracking-wider py-5 bg-bg-card/50 border-accent/30 text-text-primary"
-                                    maxLength={7}
+                                    maxLength={10}
                                 />
+                                {/* Error Display */}
+                                {keyError ? (
+                                    <View className="flex-row items-center justify-center mt-3 gap-2">
+                                        <AlertCircle size={16} color="#f87171" />
+                                        <Text className="text-red-400 text-sm font-mono">{keyError}</Text>
+                                    </View>
+                                ) : null}
                             </View>
                             <TouchableOpacity
                                 onPress={handleLegacySubmit}
-                                disabled={legacyKey.length < 3 || isLoading}
-                                className={`w-full py-5 items-center justify-center border relative bg-accent/20 border-accent/50 ${(legacyKey.length < 3 || isLoading) ? 'opacity-50' : ''}`}
+                                disabled={legacyKey.length < 3 || isLoading || isValidating}
+                                className={`w-full py-5 items-center justify-center border relative bg-accent/20 border-accent/50 ${(legacyKey.length < 3 || isLoading || isValidating) ? 'opacity-50' : ''}`}
                             >
                                 <CornerDecorations size='sm' color={iconColor} />
-                                {isLoading ? <ActivityIndicator color={iconColor} /> : <Text className="font-semibold uppercase tracking-wider text-text-primary">[[ CLAIM MY PROGRESS ]]</Text>}
+                                {(isLoading || isValidating) ? <ActivityIndicator color={iconColor} /> : <Text className="font-semibold uppercase tracking-wider text-text-primary">[[ CLAIM MY PROGRESS ]]</Text>}
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => setStep('CHOICE')} className="items-center py-3">
                                 <Text className="font-medium tracking-wider text-text-dim">[ Go Back ]</Text>

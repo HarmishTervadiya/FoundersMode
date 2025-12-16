@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="vaultKey" options={{ headerShown: false }} />
       <Stack.Screen name="callback" options={{ headerShown: false }} />
+      <Stack.Screen name="migration" options={{ headerShown: false }} />
     </Stack>
   );
 }

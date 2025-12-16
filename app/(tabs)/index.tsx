@@ -1,21 +1,56 @@
+import { LevelUpQueue } from '@/components/ui/LevelUpModal';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LogOut, User, Zap } from 'lucide-react-native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { key: themeKey } = useTheme();
   const { signOut } = useAuthStore();
-  const { profile } = useUserStore();
+  const { profile, fetchProfile } = useUserStore();
 
   // Get icon color from Colors constant
   const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
+
+  // Level-up queue state
+  const [levelsToShow, setLevelsToShow] = useState<number[]>([1,2,3,4,5,6]);
+  const [showLevelUp, setShowLevelUp] = useState(true);
+
+  // Check for level-up params from migration
+  useEffect(() => {
+    if (params.levelsGained && parseInt(params.levelsGained as string) > 0) {
+      const gained = parseInt(params.levelsGained as string);
+      const newLevel = parseInt(params.newLevel as string);
+      const previousLevel = parseInt(params.previousLevel as string);
+
+      // Generate array of levels to show (max 3)
+      const levels: number[] = [];
+      const maxToShow = Math.min(gained, 3);
+      for (let i = 0; i < maxToShow; i++) {
+        levels.push(previousLevel + i + 1);
+      }
+
+      setLevelsToShow(levels);
+      setShowLevelUp(true);
+
+      // Refresh profile to get updated stats
+      if (profile?.id) {
+        fetchProfile(profile.id);
+      }
+    }
+  }, [params.levelsGained]);
+
+  const handleLevelUpComplete = () => {
+    setShowLevelUp(false);
+    setLevelsToShow([]);
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -36,7 +71,15 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-base">
+    <SafeAreaView className={`flex-1 bg-bg-base theme-${themeKey}`}>
+      {/* Level-Up Modals */}
+      {showLevelUp && levelsToShow.length > 0 && (
+        <LevelUpQueue
+          levelsToShow={levelsToShow}
+          onComplete={handleLevelUpComplete}
+        />
+      )}
+
       {/* Background Glow */}
       <View className="absolute inset-0 opacity-5 bg-accent" />
 
@@ -76,7 +119,7 @@ export default function HomeScreen() {
             Your journey begins here. Track your progress, level up, and build your legacy.
           </Text>
 
-          {/* Stats Placeholder */}
+          {/* Stats */}
           <View className="flex-row gap-4 mt-8">
             <View className="p-4 border items-center border-accent/30 bg-accent/10">
               <Text className="text-2xl font-bold text-text-primary">{profile?.level || 1}</Text>

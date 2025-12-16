@@ -92,8 +92,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         }
 
         if (inAuthGroup) {
-          // Skip if on callback - let it handle its own routing
-          if (segments[1] === 'callback') return;
+          // Skip if on callback or migration - let them handle their own routing
+          if (segments[1] === 'callback' || segments[1] === 'migration') return;
 
           if (currentProfile?.username) {
             router.replace('/(tabs)');
