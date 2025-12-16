@@ -40,7 +40,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "./with-android-debug-keystore"
     ],
     "experiments": {
       "typedRoutes": true,

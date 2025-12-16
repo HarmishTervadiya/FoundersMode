@@ -1,102 +1,100 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link, router } from 'expo-router';
+import { cx, theme } from '@/constants/theme.utils';
+import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store/userStore';
+import { useRouter } from 'expo-router';
+import { LogOut, User, Zap } from 'lucide-react-native';
+import React from 'react';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <TouchableOpacity onPress={()=> {
-        router.navigate("/auth/index")
-      }}>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      </TouchableOpacity>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const { signOut } = useAuthStore();
+  const { profile } = useUserStore();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to exit the facility?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            router.replace('/auth/login');
+          }
+        }
+      ]
+    );
+  };
+
+  return (
+    <SafeAreaView className={cx('flex-1', theme.bgClass)}>
+      {/* Background Glow */}
+      <View className={cx('absolute inset-0 opacity-5', theme.accentBg)} />
+
+      <View className="flex-1 p-6">
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-8">
+          <View className="flex-row items-center gap-3">
+            <View className={cx('w-12 h-12 items-center justify-center border-2', theme.borderClass, theme.glowClass)}>
+              <Zap size={24} color={theme.iconColor} />
+            </View>
+            <View>
+              <Text className={cx('text-xs tracking-widest font-bold', theme.textDimClass)}>FOUNDERS MODE</Text>
+              <Text className={cx('text-lg font-bold tracking-wide', theme.textClass)}>
+                {profile?.username || 'Founder'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            className={cx('p-3 border', theme.dangerBg, theme.dangerBorder)}
+          >
+            <LogOut size={20} color="#f87171" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Main Content */}
+        <View className="flex-1 items-center justify-center">
+          <View className={cx('w-24 h-24 items-center justify-center border-2 mb-6', theme.borderClass, theme.glowClass)}>
+            <User size={48} color={theme.iconColor} />
+          </View>
+          <Text className={cx('text-2xl font-bold tracking-wider mb-2', theme.textClass)}>
+            WELCOME, FOUNDER
+          </Text>
+          <Text className={cx('text-center opacity-80', theme.mutedTextClass)}>
+            Your journey begins here. Track your progress, level up, and build your legacy.
+          </Text>
+
+          {/* Stats Placeholder */}
+          <View className="flex-row gap-4 mt-8">
+            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
+              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.level || 1}</Text>
+              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>LEVEL</Text>
+            </View>
+            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
+              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.lifetime_xp || 0}</Text>
+              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>XP</Text>
+            </View>
+            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
+              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.current_streak || 0}</Text>
+              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>STREAK</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View className="items-center py-4">
+          <Text className={cx('text-xs tracking-widest opacity-40', theme.textClass)}>
+            [ SYSTEM ONLINE ]
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
