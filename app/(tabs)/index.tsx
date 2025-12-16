@@ -1,4 +1,5 @@
-import { cx, theme } from '@/constants/theme.utils';
+import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'expo-router';
@@ -9,8 +10,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { key: themeKey } = useTheme();
   const { signOut } = useAuthStore();
   const { profile } = useUserStore();
+
+  // Get icon color from Colors constant
+  const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
 
   const handleLogout = () => {
     Alert.alert(
@@ -31,20 +36,20 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className={cx('flex-1', theme.bgClass)}>
+    <SafeAreaView className="flex-1 bg-bg-base">
       {/* Background Glow */}
-      <View className={cx('absolute inset-0 opacity-5', theme.accentBg)} />
+      <View className="absolute inset-0 opacity-5 bg-accent" />
 
       <View className="flex-1 p-6">
         {/* Header */}
         <View className="flex-row items-center justify-between mb-8">
           <View className="flex-row items-center gap-3">
-            <View className={cx('w-12 h-12 items-center justify-center border-2', theme.borderClass, theme.glowClass)}>
-              <Zap size={24} color={theme.iconColor} />
+            <View className="w-12 h-12 items-center justify-center border-2 border-accent/30 bg-accent/10">
+              <Zap size={24} color={iconColor} />
             </View>
             <View>
-              <Text className={cx('text-xs tracking-widest font-bold', theme.textDimClass)}>FOUNDERS MODE</Text>
-              <Text className={cx('text-lg font-bold tracking-wide', theme.textClass)}>
+              <Text className="text-xs tracking-widest font-bold text-text-dim">FOUNDERS MODE</Text>
+              <Text className="text-lg font-bold tracking-wide text-text-primary">
                 {profile?.username || 'Founder'}
               </Text>
             </View>
@@ -53,7 +58,7 @@ export default function HomeScreen() {
           {/* Logout Button */}
           <TouchableOpacity
             onPress={handleLogout}
-            className={cx('p-3 border', theme.dangerBg, theme.dangerBorder)}
+            className="p-3 border bg-red-500/20 border-red-500/50"
           >
             <LogOut size={20} color="#f87171" />
           </TouchableOpacity>
@@ -61,36 +66,36 @@ export default function HomeScreen() {
 
         {/* Main Content */}
         <View className="flex-1 items-center justify-center">
-          <View className={cx('w-24 h-24 items-center justify-center border-2 mb-6', theme.borderClass, theme.glowClass)}>
-            <User size={48} color={theme.iconColor} />
+          <View className="w-24 h-24 items-center justify-center border-2 mb-6 border-accent/30 bg-accent/10">
+            <User size={48} color={iconColor} />
           </View>
-          <Text className={cx('text-2xl font-bold tracking-wider mb-2', theme.textClass)}>
+          <Text className="text-2xl font-bold tracking-wider mb-2 text-text-primary">
             WELCOME, FOUNDER
           </Text>
-          <Text className={cx('text-center opacity-80', theme.mutedTextClass)}>
+          <Text className="text-center opacity-80 text-text-muted">
             Your journey begins here. Track your progress, level up, and build your legacy.
           </Text>
 
           {/* Stats Placeholder */}
           <View className="flex-row gap-4 mt-8">
-            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
-              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.level || 1}</Text>
-              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>LEVEL</Text>
+            <View className="p-4 border items-center border-accent/30 bg-accent/10">
+              <Text className="text-2xl font-bold text-text-primary">{profile?.level || 1}</Text>
+              <Text className="text-xs tracking-widest text-text-dim">LEVEL</Text>
             </View>
-            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
-              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.lifetime_xp || 0}</Text>
-              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>XP</Text>
+            <View className="p-4 border items-center border-accent/30 bg-accent/10">
+              <Text className="text-2xl font-bold text-text-primary">{profile?.lifetime_xp || 0}</Text>
+              <Text className="text-xs tracking-widest text-text-dim">XP</Text>
             </View>
-            <View className={cx('p-4 border items-center', theme.borderClass, theme.glowClass)}>
-              <Text className={cx('text-2xl font-bold', theme.textClass)}>{profile?.current_streak || 0}</Text>
-              <Text className={cx('text-xs tracking-widest', theme.textDimClass)}>STREAK</Text>
+            <View className="p-4 border items-center border-accent/30 bg-accent/10">
+              <Text className="text-2xl font-bold text-text-primary">{profile?.current_streak || 0}</Text>
+              <Text className="text-xs tracking-widest text-text-dim">STREAK</Text>
             </View>
           </View>
         </View>
 
         {/* Footer */}
         <View className="items-center py-4">
-          <Text className={cx('text-xs tracking-widest opacity-40', theme.textClass)}>
+          <Text className="text-xs tracking-widest opacity-40 text-text-primary">
             [ SYSTEM ONLINE ]
           </Text>
         </View>

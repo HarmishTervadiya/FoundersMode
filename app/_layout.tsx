@@ -8,7 +8,9 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUserStore } from '@/store/userStore';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -20,6 +22,7 @@ export const unstable_settings = {
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, initialize, isLoading: authLoading } = useAuthStore();
   const { profile, fetchProfile } = useUserStore();
+  const { hasSeenOnboarding } = useOnboardingStore();
   const segments = useSegments();
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
@@ -57,15 +60,30 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     initialize();
   }, []);
 
-  // Auth Guard & Routing - only runs when navigation is ready
+  // Main routing logic - onboarding first, then auth
   useEffect(() => {
     if (!isNavigationReady || authLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    // Check if on onboarding screen (auth/index or just auth/)
+    const isOnOnboarding = inAuthGroup && segments[1] === undefined;
 
+    // Priority 1: Show onboarding if not seen
+    if (!hasSeenOnboarding) {
+      if (!isOnOnboarding) {
+        router.replace('/auth' as any);
+      }
+      return;
+    }
+
+    // Priority 2: Unauthenticated users go to login
     if (!session && !inAuthGroup) {
       router.replace('/auth/login');
-    } else if (session) {
+      return;
+    }
+
+    // Priority 3: Authenticated users - handle profile setup
+    if (session) {
       const handleAuthenticatedRouting = async () => {
         let currentProfile = profile;
         if (!currentProfile && session.user) {
@@ -89,14 +107,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       };
       handleAuthenticatedRouting();
     }
-  }, [session, segments, authLoading, isNavigationReady]);
+  }, [session, segments, authLoading, isNavigationReady, hasSeenOnboarding]);
+
+  const { key: themeKey } = useTheme();
 
   // Show loading while auth initializes (AFTER navigation is ready)
   if (!isNavigationReady || authLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <View className={`flex-1 bg-bg-base items-center justify-center theme-${themeKey}`}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ color: colors.primary, marginTop: 20, fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: 2 }}>
+        <Text className="text-text-primary mt-5 font-mono font-bold tracking-widest">
           {loadingMessages[loadingMessageIndex]}
         </Text>
       </View>
@@ -109,9 +129,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 // RootLayout - ALWAYS mounts the navigator first
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const { key: themeKey } = useTheme();
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView className={`flex-1 theme-${themeKey}`}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AuthGate>
           <Slot />

@@ -1,15 +1,16 @@
-import { colors } from '@/constants/theme.utils';
+import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
 
 // Matrix rain column component
-function MatrixColumn({ delay, speed }: { delay: number; speed: number }) {
+function MatrixColumn({ delay, speed, color }: { delay: number; speed: number; color: string }) {
     const translateY = useRef(new Animated.Value(-100)).current;
     const opacity = useRef(new Animated.Value(0)).current;
 
@@ -43,9 +44,9 @@ function MatrixColumn({ delay, speed }: { delay: number; speed: number }) {
     );
 
     return (
-        <Animated.View style={[styles.matrixColumn, { transform: [{ translateY }], opacity }]}>
+        <Animated.View style={[{ alignItems: 'center' }, { transform: [{ translateY }], opacity }]}>
             {chars.map((char, i) => (
-                <Text key={i} style={[styles.matrixChar, { opacity: 1 - i * 0.15 }]}>
+                <Text key={i} style={{ color, fontSize: 14, fontFamily: 'monospace', marginVertical: 2, opacity: 1 - i * 0.15 }}>
                     {char}
                 </Text>
             ))}
@@ -54,7 +55,7 @@ function MatrixColumn({ delay, speed }: { delay: number; speed: number }) {
 }
 
 // Progress bar component
-function ProgressBar({ progress, label }: { progress: number; label: string }) {
+function ProgressBar({ progress, label, colors }: { progress: number; label: string; colors: { primary: string; primaryDim: string; primaryBg: string; primaryBorder: string } }) {
     const animatedWidth = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -66,12 +67,12 @@ function ProgressBar({ progress, label }: { progress: number; label: string }) {
     }, [progress]);
 
     return (
-        <View style={styles.progressContainer}>
-            <Text style={styles.progressLabel}>{label}</Text>
-            <View style={styles.progressTrack}>
+        <View style={{ width: '100%', maxWidth: 300 }}>
+            <Text style={{ color: colors.primaryDim, fontSize: 10, fontFamily: 'monospace', letterSpacing: 2, marginBottom: 8 }}>{label}</Text>
+            <View style={{ height: 8, backgroundColor: colors.primaryBg, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: colors.primaryBorder }}>
                 <Animated.View
                     style={[
-                        styles.progressFill,
+                        { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
                         {
                             width: animatedWidth.interpolate({
                                 inputRange: [0, 100],
@@ -81,15 +82,29 @@ function ProgressBar({ progress, label }: { progress: number; label: string }) {
                     ]}
                 />
             </View>
-            <Text style={styles.progressPercent}>{Math.round(progress)}%</Text>
+            <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'monospace', marginTop: 8, textAlign: 'right' }}>{Math.round(progress)}%</Text>
         </View>
     );
 }
 
 export default function AuthCallback() {
     const router = useRouter();
+    const { key: themeKey } = useTheme();
     const { session, user } = useAuthStore();
     const { createOrFetchProfile, profile } = useUserStore();
+
+    // Get theme colors dynamically
+    const themeColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
+    const colors = useMemo(() => ({
+        primary: themeColor,
+        primaryDim: `${themeColor}80`,
+        primaryBg: `${themeColor}15`,
+        primaryBorder: `${themeColor}40`,
+        secondary: themeColor,
+    }), [themeColor]);
+
+    // Memoize styles for performance
+    const styles = useMemo(() => getStyles(colors), [colors]);
 
     const [progress, setProgress] = useState(0);
     const [statusText, setStatusText] = useState('Establishing secure connection...');
@@ -199,12 +214,12 @@ export default function AuthCallback() {
     }, []);
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} className={`theme-${themeKey}`}>
             {/* Matrix Rain Background */}
             <View style={styles.matrixContainer}>
                 {matrixColumns.map((col, i) => (
                     <View key={i} style={[styles.columnWrapper, { left: col.left as any }]}>
-                        <MatrixColumn delay={col.delay} speed={col.speed} />
+                        <MatrixColumn delay={col.delay} speed={col.speed} color={colors.primary} />
                     </View>
                 ))}
             </View>
@@ -229,7 +244,7 @@ export default function AuthCallback() {
                 <Text style={styles.statusText}>{statusText}</Text>
 
                 {/* Progress Bar */}
-                <ProgressBar progress={progress} label="SYSTEM INITIALIZATION" />
+                <ProgressBar progress={progress} label="SYSTEM INITIALIZATION" colors={colors} />
 
                 {/* Decorative Footer */}
                 <View style={styles.footer}>
@@ -241,7 +256,8 @@ export default function AuthCallback() {
     );
 }
 
-const styles = StyleSheet.create({
+// Dynamic styles based on theme colors
+const getStyles = (colors: { primary: string; primaryDim: string; primaryBg: string; primaryBorder: string; secondary: string }) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#020617',
