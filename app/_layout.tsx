@@ -28,6 +28,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const rootNavigationState = useRootNavigationState();
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [isRouting, setIsRouting] = useState(false);
 
   // Rotating loading messages for better UX
   const loadingMessages = [
@@ -40,13 +41,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   // Cycle through loading messages
   useEffect(() => {
-    if (!isNavigationReady || authLoading) {
+    if (!isNavigationReady || authLoading || isRouting) {
       const interval = setInterval(() => {
         setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
       }, 1500);
       return () => clearInterval(interval);
     }
-  }, [isNavigationReady, authLoading]);
+  }, [isNavigationReady, authLoading, isRouting]);
 
   // Track when navigation becomes ready
   useEffect(() => {
@@ -85,24 +86,37 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // Priority 3: Authenticated users - handle profile setup
     if (session) {
       const handleAuthenticatedRouting = async () => {
-        let currentProfile = profile;
-        if (!currentProfile && session.user) {
-          await fetchProfile(session.user.id);
-          currentProfile = useUserStore.getState().profile;
-        }
-
-        if (inAuthGroup) {
-          // Skip if on callback or migration - let them handle their own routing
-          if (segments[1] === 'callback' || segments[1] === 'migration') return;
-
-          if (currentProfile?.username) {
-            router.replace('/(tabs)');
-          } else {
-            const onVaultScreen = segments[1] === 'vaultKey';
-            if (!onVaultScreen) {
-              router.replace('/auth/vaultKey');
-            }
+        setIsRouting(true); // Start routing lock
+        try {
+          let currentProfile = profile;
+          if (!currentProfile && session.user) {
+            await fetchProfile(session.user.id);
+            currentProfile = useUserStore.getState().profile;
           }
+
+          if (inAuthGroup) {
+            // Skip if on callback or migration - let them handle their own routing
+            if (segments[1] === 'callback' || segments[1] === 'migration') {
+              setIsRouting(false);
+              return;
+            }
+
+            if (currentProfile?.username) {
+              router.replace('/(tabs)');
+            } else {
+              const onVaultScreen = segments[1] === 'vaultKey';
+              if (!onVaultScreen) {
+                router.replace('/auth/vaultKey');
+              } else {
+                setIsRouting(false); // Stay on vaultKey
+              }
+            }
+          } else {
+            setIsRouting(false); // Already in app, no routing needed
+          }
+        } catch (e) {
+          console.error("Routing error:", e);
+          setIsRouting(false);
         }
       };
       handleAuthenticatedRouting();
@@ -112,7 +126,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { key: themeKey } = useTheme();
 
   // Show loading while auth initializes (AFTER navigation is ready)
-  if (!isNavigationReady || authLoading) {
+  if (!isNavigationReady || authLoading || isRouting) {
     return (
       <View className={`flex-1 bg-bg-base items-center justify-center theme-${themeKey}`}>
         <ActivityIndicator size="large" color={colors.primary} />

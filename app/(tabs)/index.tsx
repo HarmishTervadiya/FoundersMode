@@ -20,24 +20,20 @@ export default function HomeScreen() {
   const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
 
   // Level-up queue state
-  const [levelsToShow, setLevelsToShow] = useState<number[]>([1,2,3,4,5,6]);
-  const [showLevelUp, setShowLevelUp] = useState(true);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [previousLevel, setPreviousLevel] = useState(0);
+  const [newLevel, setNewLevel] = useState(0);
 
   // Check for level-up params from migration
   useEffect(() => {
     if (params.levelsGained && parseInt(params.levelsGained as string) > 0) {
-      const gained = parseInt(params.levelsGained as string);
-      const newLevel = parseInt(params.newLevel as string);
-      const previousLevel = parseInt(params.previousLevel as string);
+      const prev = parseInt(params.previousLevel as string);
+      const next = parseInt(params.newLevel as string);
 
-      // Generate array of levels to show (max 3)
-      const levels: number[] = [];
-      const maxToShow = Math.min(gained, 3);
-      for (let i = 0; i < maxToShow; i++) {
-        levels.push(previousLevel + i + 1);
-      }
+      console.log('[HomeScreen] Level-up params - previous:', prev, 'new:', next);
 
-      setLevelsToShow(levels);
+      setPreviousLevel(prev);
+      setNewLevel(next);
       setShowLevelUp(true);
 
       // Refresh profile to get updated stats
@@ -48,8 +44,8 @@ export default function HomeScreen() {
   }, [params.levelsGained]);
 
   const handleLevelUpComplete = () => {
+    console.log('[HomeScreen] Level-up queue complete');
     setShowLevelUp(false);
-    setLevelsToShow([]);
   };
 
   const handleLogout = () => {
@@ -58,6 +54,14 @@ export default function HomeScreen() {
       "Are you sure you want to exit the facility?",
       [
         { text: "Cancel", style: "cancel" },
+        {
+          text: "Test Level Up",
+          onPress: () => {
+            setPreviousLevel(1);
+            setNewLevel(6);
+            setShowLevelUp(true);
+          }
+        },
         {
           text: "Logout",
           style: "destructive",
@@ -73,9 +77,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className={`flex-1 bg-bg-base theme-${themeKey}`}>
       {/* Level-Up Modals */}
-      {showLevelUp && levelsToShow.length > 0 && (
+      {showLevelUp && previousLevel > 0 && newLevel > previousLevel && (
         <LevelUpQueue
-          levelsToShow={levelsToShow}
+          previousLevel={previousLevel}
+          newLevel={newLevel}
           onComplete={handleLevelUpComplete}
         />
       )}

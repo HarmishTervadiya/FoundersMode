@@ -1,31 +1,146 @@
 /**
- * LevelUpModal Component
+ * LevelUpModal Components
  * 
- * Reusable modal for displaying level-up celebrations.
+ * Two-tier level-up modal system:
+ * 1. SimpleLevelUpModal - Minimal notification for all level-ups
+ * 2. DetailedLevelUpModal - Full modal for milestone levels with titles
+ * 
  * Theme-aware using NativeWind tokens.
- * Sequential display support (max 3 at once).
  */
 
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
-import { Award, Sparkles, Star } from 'lucide-react-native';
-import React, { useEffect, useRef } from 'react';
+import { useLevelStore } from '@/store/levelStore';
+import { Award, ChevronUp, Sparkles, Star } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Text, TouchableOpacity, View } from 'react-native';
 import { CornerDecorations } from './CornerDecorations';
 
-interface LevelUpModalProps {
+// ============================================
+// SIMPLE LEVEL-UP MODAL (Minimal notification)
+// ============================================
+
+interface SimpleLevelUpModalProps {
     visible: boolean;
     level: number;
+    position?: number; // 0-4 for stacking multiple modals
     onDismiss: () => void;
     autoDissmissMs?: number;
 }
 
-export function LevelUpModal({
+export function SimpleLevelUpModal({
     visible,
     level,
+    position = 0,
     onDismiss,
-    autoDissmissMs = 3000,
-}: LevelUpModalProps) {
+    autoDissmissMs = 1500,
+}: SimpleLevelUpModalProps) {
+    const { key: themeKey } = useTheme();
+    const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
+
+    const translateY = useRef(new Animated.Value(-100)).current;
+    const opacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            // Entrance animation - slide in from top
+            Animated.parallel([
+                Animated.spring(translateY, {
+                    toValue: 0,
+                    friction: 8,
+                    tension: 40,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+
+            // Auto-dismiss timer
+            const timer = setTimeout(() => {
+                handleDismiss();
+            }, autoDissmissMs);
+
+            return () => clearTimeout(timer);
+        }
+    }, [visible]);
+
+    const handleDismiss = () => {
+        Animated.parallel([
+            Animated.timing(translateY, {
+                toValue: -100,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            translateY.setValue(-100);
+            onDismiss();
+        });
+    };
+
+    if (!visible) return null;
+
+    // Calculate vertical offset for stacking
+    const topOffset = 60 + (position * 70);
+
+    return (
+        <Animated.View
+            style={{
+                position: 'absolute',
+                top: topOffset,
+                left: 20,
+                right: 20,
+                zIndex: 1000 + position,
+                transform: [{ translateY }],
+                opacity,
+            }}
+            className={`theme-${themeKey}`}
+        >
+            <View className="flex-row items-center justify-center bg-bg-card border-none px-6 py-4 rounded-sm relative">
+                <CornerDecorations size="sm" />
+                <ChevronUp size={24} color={iconColor} />
+                <View className="mx-3">
+                    <Text className="text-lg font-bold tracking-wider text-text-primary">
+                        LEVEL UP!
+                    </Text>
+                    <Text className="text-xs tracking-widest text-text-muted">
+                        REACHED LEVEL {level}
+                    </Text>
+                </View>
+                <View className="w-12 h-12 rounded-full border-2 border-accent bg-accent/20 items-center justify-center">
+                    <Text className="text-xl font-bold text-text-primary">{level}</Text>
+                </View>
+            </View>
+        </Animated.View>
+    );
+}
+
+// ============================================
+// DETAILED LEVEL-UP MODAL (Milestone celebration)
+// ============================================
+
+interface DetailedLevelUpModalProps {
+    visible: boolean;
+    level: number;
+    title?: string | null;
+    onDismiss: () => void;
+    autoDissmissMs?: number;
+}
+
+export function DetailedLevelUpModal({
+    visible,
+    level,
+    title,
+    onDismiss,
+    autoDissmissMs = 4000,
+}: DetailedLevelUpModalProps) {
     const { key: themeKey } = useTheme();
     const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
 
@@ -109,20 +224,27 @@ export function LevelUpModal({
                             <Text className="text-4xl font-bold text-text-primary">{level}</Text>
                         </View>
 
-                        {/* Title */}
+                        {/* Title - MILESTONE */}
                         <Text className="text-2xl font-bold tracking-widest text-text-primary mb-2">
-                            LEVEL UP!
+                            MILESTONE!
                         </Text>
 
+                        {/* Level Title */}
+                        {title && (
+                            <Text className="text-lg font-bold tracking-wider text-accent mb-2">
+                                "{title}"
+                            </Text>
+                        )}
+
                         <Text className="text-center text-text-muted mb-6">
-                            You've reached Level {level}
+                            You've unlocked Level {level}
                         </Text>
 
                         {/* Award Icon */}
                         <View className="flex-row items-center gap-2 mb-6">
                             <Award size={20} color={iconColor} />
                             <Text className="text-xs tracking-widest text-text-dim">
-                                FOUNDER PROGRESSION
+                                FOUNDER ACHIEVEMENT
                             </Text>
                         </View>
 
@@ -142,43 +264,127 @@ export function LevelUpModal({
     );
 }
 
-/**
- * LevelUpQueue Component
- * 
- * Manages sequential display of multiple level-up modals.
- * Shows max 3 at once, then dismisses sequentially.
- */
+// Keep old export name for backwards compatibility
+export const LevelUpModal = DetailedLevelUpModal;
+
+// ============================================
+// LEVEL-UP QUEUE (Orchestrates both modal types)
+// ============================================
 
 interface LevelUpQueueProps {
-    levelsToShow: number[];
+    previousLevel: number;
+    newLevel: number;
     onComplete: () => void;
 }
 
-export function LevelUpQueue({ levelsToShow, onComplete }: LevelUpQueueProps) {
-    const [currentIndex, setCurrentIndex] = React.useState(0);
-    const maxModals = 3;
+type QueuePhase = 'simple' | 'detailed' | 'complete';
 
-    // Only show first 3 levels
-    const displayLevels = levelsToShow.slice(0, maxModals);
+export function LevelUpQueue({ previousLevel, newLevel, onComplete }: LevelUpQueueProps) {
+    const { fetchLevelData, getLevelTitle } = useLevelStore();
+    const [phase, setPhase] = useState<QueuePhase>('simple');
 
-    const handleDismiss = () => {
-        if (currentIndex < displayLevels.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        } else {
-            onComplete();
+    // Store IDs of currently visible simple modals
+    const [visibleSimpleLevels, setVisibleSimpleLevels] = useState<number[]>([]);
+
+    // State for the detailed modal
+    const [showDetailed, setShowDetailed] = useState(false);
+    const [milestoneTitle, setMilestoneTitle] = useState<string | null>(null);
+    const [isReady, setIsReady] = useState(false);
+    // Track if we've successfully initialized and populated the queue
+    const [hasPopulated, setHasPopulated] = useState(false);
+
+    // Generate array of levels gained
+    const levelsGained = newLevel - previousLevel;
+    const levelNumbers = React.useMemo(() => {
+        const levels: number[] = [];
+        for (let i = 1; i <= levelsGained; i++) {
+            levels.push(previousLevel + i);
         }
+        return levels;
+    }, [previousLevel, levelsGained]);
+
+    // Fetch level data and initialize on mount
+    useEffect(() => {
+        const init = async () => {
+            if (levelNumbers.length > 0) {
+                console.log('[LevelUpQueue] Fetching data for levels:', levelNumbers);
+                await fetchLevelData(levelNumbers);
+
+                const finalTitle = getLevelTitle(newLevel);
+                setMilestoneTitle(finalTitle);
+
+                // Show all simple modals simultaneously
+                setVisibleSimpleLevels(levelNumbers);
+                setHasPopulated(true);
+                setIsReady(true);
+                console.log('[LevelUpQueue] Initialized - showing levels:', levelNumbers, 'Milestone:', finalTitle);
+            } else {
+                onComplete();
+            }
+        };
+        init();
+    }, []);
+
+    // Effect to handle transition after all simple modals are dismissed
+    useEffect(() => {
+        if (isReady && hasPopulated && visibleSimpleLevels.length === 0 && phase === 'simple') {
+            console.log('[LevelUpQueue] All simple modals dismissed. Checking next phase...');
+            if (milestoneTitle) {
+                // Show detailed modal for milestone
+                console.log('[LevelUpQueue] Showing detailed modal for:', milestoneTitle);
+                setPhase('detailed');
+                setShowDetailed(true);
+            } else {
+                // No milestone, complete
+                console.log('[LevelUpQueue] No milestone, completing.');
+                setPhase('complete');
+                onComplete();
+            }
+        }
+    }, [visibleSimpleLevels, phase, isReady, hasPopulated, milestoneTitle]);
+
+    // Handle simple modal dismiss for a specific level
+    const handleSimpleDismiss = (level: number) => {
+        setVisibleSimpleLevels(prev => prev.filter(l => l !== level));
     };
 
-    if (displayLevels.length === 0) return null;
+    // Handle detailed modal dismiss
+    const handleDetailedDismiss = () => {
+        setShowDetailed(false);
+        setPhase('complete');
+        onComplete();
+    };
 
-    const currentLevel = displayLevels[currentIndex];
+    if (!isReady || levelNumbers.length === 0) return null;
 
     return (
-        <LevelUpModal
-            visible={true}
-            level={currentLevel}
-            onDismiss={handleDismiss}
-            autoDissmissMs={2500}
-        />
+        <>
+            {/* Simple Level-Up Modals - Stacked Simultaneously */}
+            {phase === 'simple' && visibleSimpleLevels.map((level, index) => (
+                <SimpleLevelUpModal
+                    key={level}
+                    visible={true}
+                    level={level}
+                    // Calculate position based on original index to maintain stack order
+                    // regardless of dismissal order. 
+                    // We find the index in original levelNumbers to keep position stable.
+                    position={levelNumbers.indexOf(level)}
+                    onDismiss={() => handleSimpleDismiss(level)}
+                    // Stagger auto-dismiss slightly for visual effect
+                    autoDissmissMs={2000 + (index * 500)}
+                />
+            ))}
+
+            {/* Detailed Milestone Modal */}
+            {phase === 'detailed' && (
+                <DetailedLevelUpModal
+                    visible={showDetailed}
+                    level={newLevel}
+                    title={milestoneTitle}
+                    onDismiss={handleDetailedDismiss}
+                    autoDissmissMs={4000}
+                />
+            )}
+        </>
     );
 }
