@@ -21,7 +21,7 @@ export const unstable_settings = {
 // Separate component for Auth Logic - runs AFTER RootLayout mounts
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, initialize, isLoading: authLoading } = useAuthStore();
-  const { profile, fetchProfile } = useUserStore();
+  const { profile, fetchProfile, updateLastLogin } = useUserStore();
   const { hasSeenOnboarding } = useOnboardingStore();
   const segments = useSegments();
   const router = useRouter();
@@ -102,16 +102,22 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             }
 
             if (currentProfile?.username) {
+              updateLastLogin();
               router.replace('/(tabs)');
             } else {
               const onVaultScreen = segments[1] === 'vaultKey';
               if (!onVaultScreen) {
                 router.replace('/auth/vaultKey');
               } else {
+                // If we are settled on a screen (dashboard or vault), update last login
+                updateLastLogin();
                 setIsRouting(false); // Stay on vaultKey
               }
             }
           } else {
+            // Priority 4: If already in app (e.g. rebooted on index), also update last login
+            // But we should only do this once session is settled.
+            updateLastLogin();
             setIsRouting(false); // Already in app, no routing needed
           }
         } catch (e) {

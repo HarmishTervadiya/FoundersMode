@@ -15,7 +15,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+        
+      }}
+      backBehavior='history'
+      >
       <Tabs.Screen
         name="index"
         options={{

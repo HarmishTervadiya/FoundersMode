@@ -20,7 +20,7 @@ interface UserState {
     userId: string,
     email?: string
   ) => Promise<{ profile: Profile | null; isNew: boolean }>;
-  updateLastLogDate: () => Promise<void>;
+  updateLastLogin: () => Promise<void>;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -134,7 +134,6 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
 
       // Profile doesn't exist - create new one
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
       const newProfileData = {
         id: userId,
         username: null,
@@ -142,7 +141,6 @@ export const useUserStore = create<UserState>((set, get) => ({
         lifetime_xp: 0,
         energy: 100,
         current_streak: 0,
-        last_log_date: today,
         str_builder: 0,
         int_architect: 0,
         wis_zen: 0,
@@ -171,27 +169,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  updateLastLogDate: async () => {
-    const profile = get().profile;
+  updateLastLogin: async () => {
+    const { profile, updateProfile } = get();
     if (!profile) return;
 
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
-
-    // Skip if already logged today
-    if (profile.last_log_date === today) return;
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ last_log_date: today })
-        .eq("id", profile.id);
-
-      if (!error) {
-        set({ profile: { ...profile, last_log_date: today } });
-        console.log("[UserStore] Updated last_log_date to:", today);
-      }
-    } catch (err) {
-      console.error("Failed to update last_log_date:", err);
-    }
+    await updateProfile({ last_log_date: new Date().toISOString() });
   },
 }));
