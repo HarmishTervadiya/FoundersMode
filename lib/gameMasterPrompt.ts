@@ -6,23 +6,27 @@ Your goal is to analyze a raw daily work log and convert it into Game Stats.
 User Log: {user_log_text}
 
 ### THE RULES OF THE GAME
-1. **Focus Points (FP):** Capped at 100/day. Measures output.
-   - Tier 1 (Low Effort): 5 FP (Email, Admin)
-   - Tier 2 (Standard): 15 FP (Coding feature, Writing blog)
-   - Tier 3 (Hard): 30 FP (Complex Debugging, Sales Calls)
-   - Tier 4 (Critical): 50 FP (Launch, Revenue)
+1. **Focus Points (FP):**
+   - Base calculation on effort and output.
+   - **Max 100 FP total per day** (The System caps this, but you output the raw score up to 100 for this single log).
+   - Tiers:
+     - Tier 1 (Low Effort/Admin): 5-15 FP
+     - Tier 2 (Standard/Core Work): 20-40 FP
+     - Tier 3 (High Impact/Deep Work): 45-65 FP
+     - Tier 4 (Critical/Launch/Breakthrough): 70-100 FP
+   - **NOTE:** High FP (>65) drains user MP (Energy). >79 FP is dangerous "Overclocking".
 
 2. **Class Stats (XP Breakdown):**
-   - STR (Builder): Coding, Shipping.
-   - CHA (Hustler): Marketing, Sales.
-   - INT (Architect): Strategy, Learning.
-   - CON (Grit): Failures, Bugs, Rejection. (Award HIGH XP for suffering).
-   - WIS (Zen): Rest, Sleep, Exercise.
+   - STR (Builder): Coding, Shipping, Physical creation.
+   - CHA (Hustler): Marketing, Sales, Networking.
+   - INT (Architect): Strategy, Learning, Planning.
+   - CON (Grit): Failures, Bugs, Rejection, Persistence.
+   - WIS (Zen): Rest, Reflection, Health.
 
 ### YOUR OUTPUT (JSON ONLY)
 Return a single JSON object. No markdown.
 {
-  "total_fp": number, // Max 100
+  "total_fp": number, // Raw score for this log (0-100)
   "total_xp": number, // Sum of breakdown
   "xp_breakdown": {
     "STR": number,
@@ -31,7 +35,8 @@ Return a single JSON object. No markdown.
     "CON": number,
     "WIS": number
   },
-  "analysis_short": "String (Max 15 words, Cyberpunk style report)",
-  "insight": "String (One brutal truth or validation about their day)"
+  "difficulty_tier": number, // 1-4
+  "analysis_short": "String (Max 15 words, Cyberpunk style status report)",
+  "insight": "String (One brutal truth or validation about their day, direct & concise)"
 }
 `;

@@ -1,14 +1,17 @@
 import { CornerDecorations } from '@/components/ui/CornerDecorations';
 import { LevelUpQueue } from '@/components/ui/LevelUpModal';
+import { LogEntryModal } from '@/components/ui/LogEntryModal';
 import { AttributeStatCard, StatBar } from '@/components/ui/StatBar';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useLevelStore } from '@/store/levelStore';
+import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -19,6 +22,7 @@ export default function HomeScreen() {
   const { profile, fetchProfile } = useUserStore();
   const { getLevelInfo, fetchAllLevels } = useLevelStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [logModalVisible, setLogModalVisible] = useState(false);
 
   // Get icon color from Colors constant
   const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
@@ -29,6 +33,9 @@ export default function HomeScreen() {
   const [previousLevel, setPreviousLevel] = useState(0);
   const [newLevel, setNewLevel] = useState(0);
 
+  // Track previous profile level to detect changes
+  const lastProfileLevel = useRef<number>(profile?.level || 1);
+
   // Initial Data Fetch
   useEffect(() => {
     fetchAllLevels();
@@ -37,13 +44,25 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // Check for level-up params from migration
+  // Watch for Level Changes ( Real-time )
+  useEffect(() => {
+    if (profile?.level && profile.level > lastProfileLevel.current) {
+      setPreviousLevel(lastProfileLevel.current);
+      setNewLevel(profile.level);
+      setShowLevelUp(true);
+      lastProfileLevel.current = profile.level;
+    } else if (profile?.level) {
+      lastProfileLevel.current = profile.level;
+    }
+  }, [profile?.level]);
+
+  // Check for level-up params from migration (Legacy/Fallback)
   useEffect(() => {
     if (params.levelsGained && parseInt(params.levelsGained as string) > 0) {
       const prev = parseInt(params.previousLevel as string);
       const next = parseInt(params.newLevel as string);
 
-      console.log('[HomeScreen] Level-up params - previous:', prev, 'new:', next);
+
 
       setPreviousLevel(prev);
       setNewLevel(next);
@@ -56,16 +75,21 @@ export default function HomeScreen() {
     }
   }, [params.levelsGained]);
 
+  const { fetchLogs } = useLogStore();
+
   const onRefresh = async () => {
     setRefreshing(true);
     if (profile?.id) {
-      await fetchProfile(profile.id);
+      await Promise.all([
+        fetchProfile(profile.id),
+        fetchLogs(profile.id)
+      ]);
     }
     setRefreshing(false);
   };
 
   const handleLevelUpComplete = () => {
-    console.log('[HomeScreen] Level-up queue complete');
+
     setShowLevelUp(false);
   };
 
@@ -102,8 +126,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} className={`flex-1 bg-bg-base theme-${themeKey}`} >
-      {/* Level-Up Modals */}
-      {showLevelUp && previousLevel > 0 && newLevel > previousLevel && (
+      {/* Level-Up Modals - Only show when log modal is closed */}
+      {!logModalVisible && showLevelUp && previousLevel > 0 && newLevel > previousLevel && (
         <LevelUpQueue
           previousLevel={previousLevel}
           newLevel={newLevel}
@@ -111,11 +135,21 @@ export default function HomeScreen() {
         />
       )}
 
+      {/* Log Entry Modal */}
+      <LogEntryModal
+        visible={logModalVisible}
+        onClose={() => setLogModalVisible(false)}
+        onSuccess={() => {
+          // Optional: explicit refresh if modal doesn't handle it
+          if (profile?.id) fetchProfile(profile.id);
+        }}
+      />
+
       {/* Background Glow */}
       <View className="absolute inset-0 opacity-5 bg-accent" />
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[accentColor]} progressBackgroundColor={"#020617"} />}
       >
         <CornerDecorations color={accentColor} />
@@ -226,18 +260,26 @@ export default function HomeScreen() {
 
           </View>
         </View>
-
-        {/* Logout (Subtle) */}
-        {/* <View className="mt-12 items-center">
-          <TouchableOpacity onPress={handleLogout} className="p-4 opacity-50">
-            <View className="flex-row items-center gap-2">
-              <LogOut size={16} color={iconColor} />
-              <Text className="text-xs text-text-dim tracking-widest">LOGOUT PROTOCOL</Text>
-            </View>
-          </TouchableOpacity>
-        </View> */}
-
       </ScrollView>
+
+      {/* FAB - Log Entry Trigger */}
+      <View className="absolute bottom-24 right-6 z-50">
+        <TouchableOpacity
+          onPress={() => setLogModalVisible(true)}
+          style={{
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.8,
+            shadowRadius: 10,
+            elevation: 10
+          }}
+          className="w-14 h-14 bg-gray-900 border border-gray-700 items-center justify-center overflow-hidden"
+        >
+          <CornerDecorations size="sm" color={accentColor} />
+          <IconSymbol name="plus" size={24} color={accentColor} />
+        </TouchableOpacity>
+      </View>
+
     </SafeAreaView>
   );
 }

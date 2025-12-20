@@ -307,7 +307,7 @@ export function LevelUpQueue({ previousLevel, newLevel, onComplete }: LevelUpQue
     useEffect(() => {
         const init = async () => {
             if (levelNumbers.length > 0) {
-                console.log('[LevelUpQueue] Fetching data for levels:', levelNumbers);
+
                 await fetchLevelData(levelNumbers);
 
                 const finalTitle = getLevelTitle(newLevel);
@@ -317,7 +317,7 @@ export function LevelUpQueue({ previousLevel, newLevel, onComplete }: LevelUpQue
                 setVisibleSimpleLevels(levelNumbers);
                 setHasPopulated(true);
                 setIsReady(true);
-                console.log('[LevelUpQueue] Initialized - showing levels:', levelNumbers, 'Milestone:', finalTitle);
+
             } else {
                 onComplete();
             }
@@ -328,15 +328,15 @@ export function LevelUpQueue({ previousLevel, newLevel, onComplete }: LevelUpQue
     // Effect to handle transition after all simple modals are dismissed
     useEffect(() => {
         if (isReady && hasPopulated && visibleSimpleLevels.length === 0 && phase === 'simple') {
-            console.log('[LevelUpQueue] All simple modals dismissed. Checking next phase...');
+
             if (milestoneTitle) {
                 // Show detailed modal for milestone
-                console.log('[LevelUpQueue] Showing detailed modal for:', milestoneTitle);
+
                 setPhase('detailed');
                 setShowDetailed(true);
             } else {
                 // No milestone, complete
-                console.log('[LevelUpQueue] No milestone, completing.');
+
                 setPhase('complete');
                 onComplete();
             }
