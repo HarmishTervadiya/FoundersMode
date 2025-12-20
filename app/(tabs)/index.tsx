@@ -7,9 +7,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useLevelStore } from '@/store/levelStore';
 import { useUserStore } from '@/store/userStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Flame, LogOut } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -117,9 +116,9 @@ export default function HomeScreen() {
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={iconColor} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[accentColor]} progressBackgroundColor={"#020617"} />}
       >
-      <CornerDecorations />
+        <CornerDecorations color={accentColor} />
 
         {/* Header Status Section */}
         <View className="items-center mb-8 mt-4 relative">
@@ -159,7 +158,7 @@ export default function HomeScreen() {
 
         {/* Experience Section */}
         <View className="mb-8 gap-2">
-        <StatBar value={xpProgress} label='Expereince' maxValue={xpToNext} showValueText={true} heightClass="h-2" />
+          <StatBar value={xpProgress} label='Expereince' maxValue={xpToNext} showValueText={true} heightClass="h-2" />
         </View>
 
         {/* Attributes Section */}
@@ -206,7 +205,7 @@ export default function HomeScreen() {
 
             {/* 6. Streak (Special Style) */}
             <View className="w-[48%] bg-gray-900 border border-orange-500/30 rounded-xl p-4 justify-between relative overflow-hidden">
-              <View className="absolute right-0 top-0 p-4" style={profile?.current_streak && profile.current_streak>0? {opacity: 1}: {opacity: 0.1} }>
+              <View className="absolute right-0 top-0 p-4" style={profile?.current_streak && profile.current_streak > 0 ? { opacity: 1 } : { opacity: 0.1 }}>
                 {/* Background Decoration */}
                 <Text className="text-4xl ">🔥</Text>
               </View>

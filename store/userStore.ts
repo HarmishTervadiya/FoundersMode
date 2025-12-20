@@ -21,6 +21,8 @@ interface UserState {
     email?: string
   ) => Promise<{ profile: Profile | null; isNew: boolean }>;
   updateLastLogin: () => Promise<void>;
+  updateUsername: (newUsername: string) => Promise<void>;
+  toggleDailyReminder: (isEnabled: boolean) => Promise<void>;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -174,5 +176,76 @@ export const useUserStore = create<UserState>((set, get) => ({
     if (!profile) return;
 
     await updateProfile({ last_log_date: new Date().toISOString() });
+  },
+  updateUsername: async (newUsername: string) => {
+    const { profile } = get();
+    if (!profile) return;
+
+    // Server-side constraint should handle this, but client-side check is good too
+    if (profile.last_username_change) {
+      const lastChange = new Date(profile.last_username_change);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - lastChange.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 30) {
+        throw new Error(
+          `Username can only be changed once every 30 days. Try again in ${30 - diffDays} days.`
+        );
+      }
+    }
+
+    // 1. Optimistic Update (Immediate UI feedback)
+    set({ profile: { ...profile, username: newUsername } });
+
+    // 2. Perform DB Sync
+    const { data, error } = await runAsync<Profile>(set, async () => {
+      return await supabase
+        .from("profiles")
+        .update({
+          username: newUsername,
+          last_username_change: new Date().toISOString(),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+    });
+
+    if (error) {
+      set({ profile }); // Rollback to old profile object (captured in closure scope? No, need to be careful)
+      // Actually 'profile' var is stale closure if we used 'const {profile} = get()'.
+      // But we can fetch it again or just undo the specific field change?
+      // Simplest rollback is usually fetching fresh, but here we can just set old 'profile' since it was const.
+      // Wait, 'profile' is a reference object. If I did shallow copy in optimistic update, 'profile' var still holds old reference?
+      // "set({ profile: { ...profile, ... } })" creates new object. 'const profile' is the old one. Correct.
+      set({ profile });
+      throw new Error(error);
+    } else if (data) {
+      // 3. Confirm with server data
+      set({ profile: data });
+    }
+  },
+
+  toggleDailyReminder: async (isEnabled: boolean) => {
+    const { profile } = get();
+    if (!profile) return;
+
+    // Optimistic
+    set({ profile: { ...profile, daily_reminder: isEnabled } });
+
+    const { data, error } = await runAsync<Profile>(set, async () => {
+      return await supabase
+        .from("profiles")
+        .update({ daily_reminder: isEnabled })
+        .eq("id", profile.id)
+        .select()
+        .single();
+    });
+
+    if (error) {
+      set({ profile }); // Rollback
+    } else if (data) {
+      set({ profile: data });
+    }
   },
 }));

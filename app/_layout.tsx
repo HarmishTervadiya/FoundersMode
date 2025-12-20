@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUserStore } from '@/store/userStore';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Colors } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -130,12 +131,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [session, segments, authLoading, isNavigationReady, hasSeenOnboarding]);
 
   const { key: themeKey } = useTheme();
+  const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
 
   // Show loading while auth initializes (AFTER navigation is ready)
   if (!isNavigationReady || authLoading || isRouting) {
     return (
       <View className={`flex-1 bg-bg-base items-center justify-center theme-${themeKey}`}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={accentColor} />
         <Text className="text-text-primary mt-5 font-mono font-bold tracking-widest">
           {loadingMessages[loadingMessageIndex]}
         </Text>
