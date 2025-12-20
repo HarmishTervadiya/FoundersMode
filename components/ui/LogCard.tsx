@@ -2,6 +2,7 @@ import { Log } from '@/store/logStore';
 import { ChevronDown } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { TextRenderer } from './TextRenderer';
 
 interface LogCardProps {
     log: Log;
@@ -69,8 +70,9 @@ export const LogCard: React.FC<LogCardProps> = ({ log, onPress, accentColor }) =
                     numberOfLines={2}
                     className="text-gray-300 font-medium text-sm leading-5 mb-3"
                 >
-                    {log.content}
+                    {log.content?.replaceAll("\\n", " ")}
                 </Text>
+
 
                 {/* Footer: Category Tag */}
                 <View className="self-start bg-gray-800/50 px-2 py-1 rounded border border-gray-700">

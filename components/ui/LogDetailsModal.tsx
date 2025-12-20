@@ -51,7 +51,7 @@ export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ visible, log, 
                     <ScrollView className="p-5">
                         {/* Main Content */}
                         <Text className="text-gray-300 text-base leading-6 mb-6 font-medium">
-                            {log.content}
+                            {log.content?.replaceAll("\\n", "\n")}
                         </Text>
 
                         {/* AI Analysis Section */}
