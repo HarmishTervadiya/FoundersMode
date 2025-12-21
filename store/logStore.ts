@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { ai, LogAnalysisResult } from "../services/ai";
 import { toLocalYMD } from "../utils/dateHelpers";
+import { getUserFriendlyErrorMessage } from "../utils/errorHandler";
 import { runAsync } from "../utils/storeHelpers";
 import { useLevelStore as levelStore } from "./levelStore";
 import { useUserStore as userStore } from "./userStore";
@@ -383,8 +384,9 @@ export const useLogStore = create<LogState>((set, get) => ({
       return analysis;
     } catch (error: any) {
       console.error("addLog failed:", error);
-      set({ isLoading: false, error: error.message });
-      throw error;
+      const friendlyMessage = getUserFriendlyErrorMessage(error);
+      set({ isLoading: false, error: friendlyMessage });
+      throw new Error(friendlyMessage); // Re-throw friendly message for UI components to catch if needed
     }
   },
 
