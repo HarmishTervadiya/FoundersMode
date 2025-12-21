@@ -34,6 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   initialize: async () => {
     console.log("[AuthStore] initialize called");
+    set({ isLoading: true, error: null });
     try {
       const {
         data: { session },
@@ -42,16 +43,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         "[AuthStore] getSession result:",
         session ? "Session found" : "No session"
       );
+
+      if (session?.user) {
+        // Wait for profile data to load before clearing loading state
+        const { useUserStore } = await import("./userStore");
+        await useUserStore.getState().fetchProfile(session.user.id);
+      }
+
       console.log("[AuthStore] Session user:", session?.user?.id);
       set({ session, user: session?.user ?? null, isLoading: false });
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         console.log("[AuthStore] onAuthStateChange event:", _event);
-        console.log(
-          "[AuthStore] onAuthStateChange session:",
-          session ? "Session found" : "No session"
-        );
-        console.log("[AuthStore] onAuthStateChange user:", session?.user?.id);
+        if (_event === "SIGNED_IN" && session?.user) {
+          const { useUserStore } = await import("./userStore");
+          await useUserStore.getState().fetchProfile(session.user.id);
+        }
         set({ session, user: session?.user ?? null, isLoading: false });
       });
     } catch (e) {

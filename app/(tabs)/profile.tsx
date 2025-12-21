@@ -1,4 +1,5 @@
 import { DevThemeToggle } from '@/components/profile/DevThemeToggle';
+import { FAQModal } from '@/components/profile/FAQModal';
 import { FeedbackModal } from '@/components/profile/FeedbackModal';
 import { UsernameChangeModal } from '@/components/profile/UsernameChangeModal';
 import { CornerDecorations } from '@/components/ui/CornerDecorations';
@@ -22,6 +23,7 @@ export default function ProfileScreen() {
 
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+    const [faqModalVisible, setFaqModalVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = useCallback(async () => {
@@ -174,6 +176,12 @@ export default function ProfileScreen() {
                     onPress={() => setFeedbackModalVisible(true)}
                 />
 
+                <SettingItem
+                    label="System Help"
+                    icon="help-buoy"
+                    onPress={() => setFaqModalVisible(true)}
+                />
+
                 {/* Developer Mode Only */}
                 <DevThemeToggle accentColor={accentColor} />
 
@@ -200,6 +208,12 @@ export default function ProfileScreen() {
             <FeedbackModal
                 visible={feedbackModalVisible}
                 onClose={() => setFeedbackModalVisible(false)}
+                accentColor={accentColor}
+            />
+
+            <FAQModal
+                visible={faqModalVisible}
+                onClose={() => setFaqModalVisible(false)}
                 accentColor={accentColor}
             />
 

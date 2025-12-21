@@ -21,7 +21,7 @@ User Log: {user_log_text}
    - CHA (Hustler): Marketing, Sales, Networking.
    - INT (Architect): Strategy, Learning, Planning.
    - CON (Grit): Failures, Bugs, Rejection, Persistence.
-   - WIS (Zen): Rest, Reflection, Health.
+   - WIS (Zen): Rest, Reflection, Health, Calmness, Nothing.
 
 ### YOUR OUTPUT (JSON ONLY)
 Return a single JSON object. No markdown.

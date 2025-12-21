@@ -1,19 +1,18 @@
-import { colors } from '@/constants/theme.utils';
 import "@/global.css";
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Slot, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUserStore } from '@/store/userStore';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Colors } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -21,8 +20,8 @@ export const unstable_settings = {
 
 // Separate component for Auth Logic - runs AFTER RootLayout mounts
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, initialize, isLoading: authLoading } = useAuthStore();
-  const { profile, fetchProfile, updateLastLogin } = useUserStore();
+  const { session, initialize, isLoading: authLoading, signOut } = useAuthStore();
+  const { profile, fetchProfile, updateLastLogin, setWelcomeMessagePending } = useUserStore();
   const { hasSeenOnboarding } = useOnboardingStore();
   const segments = useSegments();
   const router = useRouter();
@@ -67,67 +66,102 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (!isNavigationReady || authLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    // Check if on onboarding screen (auth/index or just auth/)
     const isOnOnboarding = inAuthGroup && segments[1] === undefined;
 
-    // Priority 1: Show onboarding if not seen
-    if (!hasSeenOnboarding) {
-      if (!isOnOnboarding) {
-        router.replace('/auth' as any);
+    // Helper function to handle auth checks
+    const runAuthChecks = async () => {
+      // Priority 1: Show onboarding if not seen
+      if (!hasSeenOnboarding) {
+        if (!isOnOnboarding) {
+          router.replace('/auth' as any);
+        }
+        return;
       }
-      return;
-    }
 
-    // Priority 2: Unauthenticated users go to login
-    if (!session && !inAuthGroup) {
-      router.replace('/auth/login');
-      return;
-    }
+      // Priority 2: Unauthenticated users go to login
+      if (!session && !inAuthGroup) {
+        router.replace('/auth/login');
+        return;
+      }
 
-    // Priority 3: Authenticated users - handle profile setup
-    if (session) {
-      const handleAuthenticatedRouting = async () => {
-        setIsRouting(true); // Start routing lock
+      // Priority 3: Authenticated users - handle profile setup
+      if (session) {
         try {
-          let currentProfile = profile;
-          if (!currentProfile && session.user) {
-            await fetchProfile(session.user.id);
-            currentProfile = useUserStore.getState().profile;
+          // Re-fetch profile to ensure latest data (vital for resume)
+          // Note: fetchProfile updates the store, so 'profile' in store is updated
+          const fetchedProfile = await fetchProfile(session.user.id);
+          const currentProfile = fetchedProfile || profile; // Fallback to store if fetch checks pass
+
+          if (currentProfile?.last_log_date) {
+            const lastLog = new Date(currentProfile.last_log_date);
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - lastLog.getTime());
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+            if (diffDays > 15) {
+              console.log("Session expired due to inactivity (>15 days). Signing out.");
+              await signOut();
+              router.replace('/auth/login');
+              // Ensure we stop routing logic here
+              setIsRouting(false);
+              return;
+            }
+
+            // Inactivity Recovery Check (Before updating last_log_date)
+            const recoveryResult = await useUserStore.getState().checkInactivityRecovery();
+            if (recoveryResult && recoveryResult.welcomeBack) {
+              setWelcomeMessagePending(true);
+            }
           }
 
+          // Routing / Navigation Logic (Only run if we are actually launching/routing, not just checking in background)
+          // Ideally we just update last login here if we are staying put.
+
           if (inAuthGroup) {
-            // Skip if on callback or migration - let them handle their own routing
+            // Skip if on callback or migration
             if (segments[1] === 'callback' || segments[1] === 'migration') {
               setIsRouting(false);
               return;
             }
 
             if (currentProfile?.username) {
-              updateLastLogin();
+              await updateLastLogin();
               router.replace('/(tabs)');
             } else {
               const onVaultScreen = segments[1] === 'vaultKey';
               if (!onVaultScreen) {
                 router.replace('/auth/vaultKey');
               } else {
-                // If we are settled on a screen (dashboard or vault), update last login
-                updateLastLogin();
-                setIsRouting(false); // Stay on vaultKey
+                await updateLastLogin();
+                setIsRouting(false);
               }
             }
           } else {
-            // Priority 4: If already in app (e.g. rebooted on index), also update last login
-            // But we should only do this once session is settled.
-            updateLastLogin();
-            setIsRouting(false); // Already in app, no routing needed
+            // Already in app
+            await updateLastLogin();
+            setIsRouting(false);
           }
         } catch (e) {
           console.error("Routing error:", e);
           setIsRouting(false);
         }
-      };
-      handleAuthenticatedRouting();
-    }
+      }
+    };
+
+    runAuthChecks();
+
+    // AppState Listener for Resume
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log("App resumed - running auth checks...");
+        runAuthChecks();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+
   }, [session, segments, authLoading, isNavigationReady, hasSeenOnboarding]);
 
   const { key: themeKey } = useTheme();

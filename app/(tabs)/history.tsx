@@ -54,7 +54,7 @@ export default function HistoryScreen() {
 
     return (
         <SafeAreaView edges={['top', 'left', 'right']} className={`flex-1 bg-bg-base theme-${themeKey}`}>
-            <View className='flex-1 px-6 pt-4'>
+            <View className='flex-1 px-6 pt-4 overflow-hidden'>
                 <CornerDecorations size='md' color={accentColor} />
 
                 {/* Header */}

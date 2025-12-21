@@ -23,12 +23,23 @@ interface UserState {
   updateLastLogin: () => Promise<void>;
   updateUsername: (newUsername: string) => Promise<void>;
   toggleDailyReminder: (isEnabled: boolean) => Promise<void>;
+  checkInactivityRecovery: () => Promise<{
+    recovered: boolean;
+    amount: number;
+    welcomeBack: boolean;
+  } | null>;
+  welcomeMessagePending: boolean;
+  setWelcomeMessagePending: (pending: boolean) => void;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
   profile: null,
   isLoading: false,
   error: null,
+  welcomeMessagePending: false,
+
+  setWelcomeMessagePending: (pending: boolean) =>
+    set({ welcomeMessagePending: pending }),
 
   fetchProfile: async (userId: string) => {
     const { data, error } = await runAsync<Profile>(set, async () => {
@@ -247,5 +258,78 @@ export const useUserStore = create<UserState>((set, get) => ({
     } else if (data) {
       set({ profile: data });
     }
+  },
+
+  checkInactivityRecovery: async () => {
+    const { profile } = get();
+    if (!profile || !profile.last_log_date) return null;
+
+    const lastLogDate = new Date(profile.last_log_date);
+    const now = new Date();
+
+    // Reset hours to compare dates only
+    const d1 = new Date(
+      lastLogDate.getFullYear(),
+      lastLogDate.getMonth(),
+      lastLogDate.getDate()
+    );
+    const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Difference in days
+    const diffTime = Math.abs(d2.getTime() - d1.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // "Missed days" implies gaps.
+    // If diffDays = 1 (Logged yesterday), missed = 0.
+    // If diffDays = 2 (Logged day before yesterday), missed = 1.
+    const missedDays = diffDays - 1;
+
+    if (missedDays > 0) {
+      // Recovery Logic
+      const recoveryAmount = Math.min(missedDays * 30, 100);
+      const currentEnergy = profile.energy || 0;
+
+      // Calculate new energy, capped at 100
+      // BUT requirement says: "MP must never exceed 100 after restoration."
+      // It doesn't explicitly say "add to current", but "restore... MP". usually implies addition.
+      // "Restoration must be gradual and cumulative... converted... max 100"
+
+      let newEnergy = currentEnergy + recoveryAmount;
+      if (newEnergy > 100) newEnergy = 100;
+
+      // Only update if there's a change
+      if (newEnergy !== currentEnergy) {
+        const { data, error } = await runAsync<Profile>(set, async () => {
+          return await supabase
+            .from("profiles")
+            .update({ energy: newEnergy })
+            .eq("id", profile.id)
+            .select() // return updated row
+            .single();
+        });
+
+        if (data) {
+          set({ profile: data });
+
+          // Check for Welcome Back condition (2 or more days of inactivity, checking against missedDays >= 2?
+          // "If the user returns after 2–3 or more days of inactivity"
+          // If missedDays = 1 (gap of 1 day), that's 2 days since last log.
+          // Let's interpret "2-3 days of inactivity" as missing at least 2 days (gap of 2).
+          // Actually, "Inactivity" usually means time since last action.
+          // If I logged on Monday, and return Wednesday (diff=2), I was inactive Tuesday. (Missed 1 day).
+          // If I return Thursday (diff=3), Inactive Tue, Wed. (Missed 2 days).
+          // "Returns after 2-3... days of inactivity".
+          // Let's set threshold at missedDays >= 2 (which is 3 days gap). Or strict interpretation of "2 days Inactivity" = missedDays >= 2.
+
+          const isWelcomeBack = missedDays >= 2;
+          return {
+            recovered: true,
+            amount: newEnergy - currentEnergy,
+            welcomeBack: isWelcomeBack,
+          };
+        }
+      }
+    }
+    return null;
   },
 }));

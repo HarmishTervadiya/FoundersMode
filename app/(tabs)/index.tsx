@@ -2,6 +2,7 @@ import { CornerDecorations } from '@/components/ui/CornerDecorations';
 import { LevelUpQueue } from '@/components/ui/LevelUpModal';
 import { LogEntryModal } from '@/components/ui/LogEntryModal';
 import { AttributeStatCard, StatBar } from '@/components/ui/StatBar';
+import { SystemAlert } from '@/components/ui/SystemAlert';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -24,6 +25,14 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [logModalVisible, setLogModalVisible] = useState(false);
 
+  // System Alert State for Welcome Back
+  const [systemAlertVisible, setSystemAlertVisible] = useState(false);
+  const [systemAlertConfig, setSystemAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'info' | 'success' | 'warning' | 'error'
+  });
+
   // Get icon color from Colors constant
   const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
   const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
@@ -40,7 +49,21 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchAllLevels();
     if (profile?.id) {
-      fetchProfile(profile.id);
+      fetchProfile(profile.id).then(async () => {
+        // Check if a welcome back message is pending from AuthGate checks
+        const pending = useUserStore.getState().welcomeMessagePending;
+
+        if (pending) {
+          setSystemAlertConfig({
+            title: "System Online",
+            message: "Welcome back, Player \n All systems are ready. Energy reserves have been partially restored.",
+            type: 'success'
+          });
+          setSystemAlertVisible(true);
+          // Clear the pending state
+          useUserStore.getState().setWelcomeMessagePending(false);
+        }
+      });
     }
   }, []);
 
@@ -145,11 +168,21 @@ export default function HomeScreen() {
         }}
       />
 
+      {/* System Alert for Welcome Back */}
+      <SystemAlert
+        visible={systemAlertVisible}
+        title={systemAlertConfig.title}
+        message={systemAlertConfig.message}
+        type={systemAlertConfig.type}
+        onClose={() => setSystemAlertVisible(false)}
+        accentColor={accentColor}
+      />
+
       {/* Background Glow */}
       <View className="absolute inset-0 opacity-5 bg-accent" />
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 120 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 50 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[accentColor]} progressBackgroundColor={"#020617"} />}
       >
         <CornerDecorations color={accentColor} />
@@ -167,7 +200,8 @@ export default function HomeScreen() {
 
           <View className="items-center justify-center mb-2">
             <Text className="text-6xl font-bold text-accent shadow-lg shadow-accent/50"
-              style={{ textShadowColor: accentColor, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 }}>
+              style={{ textShadowColor: accentColor, textShadowOffset: { width: 1, height:2 }, textShadowRadius: 12 }}
+            >
               {profile?.level || 1}
             </Text>
             <Text className="text-xs tracking-widest text-text-muted uppercase mt-1">Level</Text>
@@ -178,9 +212,22 @@ export default function HomeScreen() {
               JOB: <Text className="text-text-primary">Founder</Text>
             </Text>
             {/* Use profile.title if available, else standard fallback */}
-            <Text className="text-text-muted font-medium tracking-wide">
+            {profile?.title && (
+              <Text className="text-text-muted font-medium tracking-wide">
+                TITLE: <Text className="text-text-primary">{profile?.title}</Text>
+              </Text>
+            )}
+            {/* <Text className="text-text-muted font-medium tracking-wide">
               TITLE: <Text className="text-text-primary">{profile?.title || 'Initiate'}</Text>
-            </Text>
+            </Text> */}
+
+            {mp <= 0 && (
+              <View className="bg-red-500/10 px-3 py-1 rounded border border-red-500/50 mt-1">
+                <Text className="text-red-500 text-[10px] font-bold tracking-widest uppercase">
+                  DEBUFF ACTIVE: XP -50%
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -188,6 +235,11 @@ export default function HomeScreen() {
         {/* Vitals Section */}
         <View className="mb-6 gap-2">
           <StatBar label="MP" value={mp} maxValue={maxMp} colorClass="bg-blue-500" />
+          {(mp < 10 && mp > 0) && (
+            <Text className="text-red-400 text-[10px] font-bold tracking-widest uppercase text-center">
+              Burnout symptoms detected — rest needed
+            </Text>
+          )}
         </View>
 
         {/* Experience Section */}
@@ -263,7 +315,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* FAB - Log Entry Trigger */}
-      <View className="absolute bottom-24 right-6 z-50">
+      <View className="absolute bottom-8 right-6 z-50">
         <TouchableOpacity
           onPress={() => setLogModalVisible(true)}
           style={{

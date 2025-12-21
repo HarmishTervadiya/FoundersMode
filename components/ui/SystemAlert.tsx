@@ -33,7 +33,7 @@ export const SystemAlert: React.FC<SystemAlertProps> = ({
 
     const getColor = () => {
         switch (type) {
-            case 'success': return '#10b981'; // emerald-500
+            case 'success': return accentColor; // emerald-500
             case 'error': return '#ef4444'; // red-500
             case 'warning': return '#f59e0b'; // amber-500
             default: return accentColor;
@@ -55,7 +55,7 @@ export const SystemAlert: React.FC<SystemAlertProps> = ({
                     onPress={onClose}
                 />
 
-                <View className="w-full bg-gray-900 border border-gray-800 rounded-lg overflow-hidden p-6 relative max-w-sm">
+                <View className="w-full bg-gray-900 border border-gray-800 overflow-hidden p-6 relative max-w-sm">
                     <CornerDecorations size="sm" color={themeColor} />
 
                     <View className="items-center mb-4">
