@@ -8,12 +8,22 @@ import 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUserStore } from '@/store/userStore';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from 'react-native-reanimated';
 
+// This is the default configuration
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 export const unstable_settings = {
   anchor: '(tabs)',
 };
@@ -92,22 +102,40 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           const fetchedProfile = await fetchProfile(session.user.id);
           const currentProfile = fetchedProfile || profile; // Fallback to store if fetch checks pass
 
-          if (currentProfile?.last_log_date) {
-            const lastLog = new Date(currentProfile.last_log_date);
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - lastLog.getTime());
-            const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-            if (diffDays > 15) {
-              console.log("Session expired due to inactivity (>15 days). Signing out.");
-              await signOut();
-              router.replace('/auth/login');
-              // Ensure we stop routing logic here
-              setIsRouting(false);
-              return;
+          if (currentProfile) {
+            const { LOCAL_LAST_LOGIN_KEY } = await import("@/store/authStore");
+            const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+
+            let lastLogDateStr = await AsyncStorage.getItem(LOCAL_LAST_LOGIN_KEY);
+
+            // Loop Prevention: NEVER check DB for blocking session expiry.
+            // If local storage is missing (new install/cleared data), assume active session
+            // and initialize the local tracker to NOW.
+            if (!lastLogDateStr) {
+              lastLogDateStr = new Date().toISOString();
+              await AsyncStorage.setItem(LOCAL_LAST_LOGIN_KEY, lastLogDateStr);
+            }
+
+            if (lastLogDateStr) {
+              const lastLog = new Date(lastLogDateStr);
+              const now = new Date();
+              const diffTime = Math.abs(now.getTime() - lastLog.getTime());
+              const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+              if (diffDays > 15) {
+                console.log("Session expired due to inactivity (>15 days). Signing out.");
+                await signOut();
+                router.replace('/auth/login');
+                // Ensure we stop routing logic here
+                setIsRouting(false);
+                return;
+              }
             }
 
             // Inactivity Recovery Check (Before updating last_log_date)
+            // Note: Recovery Logic in userStore still uses profile.last_log_date which is fine
+            // because we want to reward based on server truth, but loop prevention needed local.
             const recoveryResult = await useUserStore.getState().checkInactivityRecovery();
             if (recoveryResult && recoveryResult.welcomeBack) {
               setWelcomeMessagePending(true);
@@ -186,6 +214,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { key: themeKey } = useTheme();
+
+  usePushNotifications();
 
   return (
     <GestureHandlerRootView className={`flex-1 theme-${themeKey}`}>

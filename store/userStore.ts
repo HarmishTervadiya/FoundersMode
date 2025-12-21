@@ -42,15 +42,27 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ welcomeMessagePending: pending }),
 
   fetchProfile: async (userId: string) => {
+    console.log("[UserStore] fetchProfile starting for:", userId);
     const { data, error } = await runAsync<Profile>(set, async () => {
-      return await supabase
+      console.log("[UserStore] Supabase request starting...");
+      const result = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
+      console.log(
+        "[UserStore] Supabase request finished. Error:",
+        !!result.error
+      );
+      return result;
     });
 
+    if (error) {
+      console.error("[UserStore] fetchProfile error:", error);
+    }
+
     if (!error && data) {
+      console.log("[UserStore] fetchProfile success");
       set({ profile: data });
       return data;
     }
@@ -185,6 +197,17 @@ export const useUserStore = create<UserState>((set, get) => ({
   updateLastLogin: async () => {
     const { profile, updateProfile } = get();
     if (!profile) return;
+
+    // Also update local storage to keep them in sync
+    const { LOCAL_LAST_LOGIN_KEY } = await import("./authStore");
+    await import("@react-native-async-storage/async-storage").then(
+      async (mod) => {
+        await mod.default.setItem(
+          LOCAL_LAST_LOGIN_KEY,
+          new Date().toISOString()
+        );
+      }
+    );
 
     await updateProfile({ last_log_date: new Date().toISOString() });
   },

@@ -8,6 +8,8 @@ import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CornerDecorations } from './CornerDecorations';
 
+import { toLocalYMD } from '@/utils/dateHelpers';
+
 interface LogEntryModalProps {
     visible: boolean;
     onClose: () => void;
@@ -28,10 +30,10 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
     const [error, setError] = useState<string | null>(null);
 
     // Calculate today's FP
-    const today = new Date().toISOString().split('T')[0];
     const { logs } = useLogStore();
+    const todayStr = toLocalYMD(new Date());
     const todayFP = logs
-        .filter(l => l.created_at.startsWith(today))
+        .filter(l => toLocalYMD(l.created_at) === todayStr)
         .reduce((sum, l) => sum + (l.total_fp_awarded || 0), 0);
     const isLocked = todayFP >= 100;
 
@@ -102,11 +104,11 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
                     {/* Header */}
                     <View className="p-4 border-b border-gray-800 flex-row justify-between items-center">
                         <Text className="text-text-primary font-bold tracking-widest uppercase">
-                            {isLocked ? "ACCESS DENIED" : (
+                            {(isLocked && phase === 'INPUT') ? "ACCESS DENIED" : (
                                 <>
                                     {phase === 'INPUT' && "New Log Entry"}
                                     {phase === 'PROCESSING' && "Neural Link Active"}
-                                    {phase === 'RESULTS' && "Analysis Complete"}
+                                    {phase === 'RESULTS' && "Quest Results"}
                                 </>
                             )}
                         </Text>
@@ -117,8 +119,8 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
 
                     {/* Content */}
                     <View className="p-6">
-                        {/* PROTOCOL LOCKED STATE (Overrides phases) */}
-                        {isLocked ? (
+                        {/* PROTOCOL LOCKED STATE (Only block 'INPUT'. Allow PROCESSING/RESULTS to finish) */}
+                        {(isLocked && phase === 'INPUT') ? (
                             <View className="items-center justify-center py-8">
                                 <View className="bg-red-500/10 border border-red-500/20 p-6 rounded-lg items-center w-full">
                                     <Lock size={32} color="#ef4444" className="mb-3" />

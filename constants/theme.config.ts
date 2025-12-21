@@ -14,7 +14,7 @@ export type ThemeKey = "emerald" | "cyan" | "violet";
 // ========================================
 // HARDCODED THEME SELECTION - CHANGE HERE
 // ========================================
-export const CURRENT_THEME: ThemeKey = "violet";
+export const CURRENT_THEME: ThemeKey = "emerald";
 
 // Theme display names
 export const THEME_NAMES: Record<ThemeKey, string> = {

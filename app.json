@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FoundersMode",
-    "slug": "FoundersMode",
+    "slug": "foundersmode",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,6 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.harmis8469.FoundersMode"
     },
     "web": {
@@ -34,10 +35,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#050505"
         }
       ],
       "expo-web-browser",
@@ -46,6 +44,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "586e1c30-5e1d-458e-95ce-a076bf7c1839"
+      }
+    },
+    "owner": "harmis8469"
   }
 }

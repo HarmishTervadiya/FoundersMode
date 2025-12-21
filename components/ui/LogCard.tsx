@@ -2,7 +2,8 @@ import { Log } from '@/store/logStore';
 import { ChevronDown } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { TextRenderer } from './TextRenderer';
+
+import { toLocalYMD } from '@/utils/dateHelpers';
 
 interface LogCardProps {
     log: Log;
@@ -39,7 +40,7 @@ export const LogCard: React.FC<LogCardProps> = ({ log, onPress, accentColor }) =
     }, [log.xp_breakdown]);
 
     // Format date
-    const dateStr = new Date(log.created_at).toISOString().split('T')[0];
+    const dateStr = toLocalYMD(log.created_at);
 
     return (
         <TouchableOpacity

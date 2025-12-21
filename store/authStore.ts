@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session, User } from "@supabase/supabase-js";
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
@@ -8,6 +9,8 @@ import { runAsync } from "../utils/storeHelpers";
 
 // Ensure WebBrowser can complete the auth session on return
 WebBrowser.maybeCompleteAuthSession();
+
+export const LOCAL_LAST_LOGIN_KEY = "founders_last_login_date";
 
 interface AuthState {
   session: Session | null;
@@ -21,7 +24,6 @@ interface AuthState {
   signInWithKey: (
     secretKey: string
   ) => Promise<{ data: any; error: string | null }>;
-  signUpWithKey: () => Promise<{ success: boolean; key?: string }>;
   signInWithGoogle: () => Promise<{ data: any; error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -56,8 +58,25 @@ export const useAuthStore = create<AuthState>((set) => ({
       supabase.auth.onAuthStateChange(async (_event, session) => {
         console.log("[AuthStore] onAuthStateChange event:", _event);
         if (_event === "SIGNED_IN" && session?.user) {
-          const { useUserStore } = await import("./userStore");
-          await useUserStore.getState().fetchProfile(session.user.id);
+          // REMOVED: fetchProfile here caused a hang if it stalled.
+          // AuthGate in _layout.tsx handles fetching profile on session change.
+
+          // Set local last login if not already present (e.g. from auto-session restore)
+          // We generally rely on explicit login actions, but this covers edge cases
+          try {
+            const current = await AsyncStorage.getItem(LOCAL_LAST_LOGIN_KEY);
+            if (!current) {
+              await AsyncStorage.setItem(
+                LOCAL_LAST_LOGIN_KEY,
+                new Date().toISOString()
+              );
+            }
+          } catch (e) {
+            console.error("Failed to set fallback local last login", e);
+          }
+        } else if (_event === "SIGNED_OUT") {
+          // Ensure cleanup happens here too
+          await AsyncStorage.removeItem(LOCAL_LAST_LOGIN_KEY);
         }
         set({ session, user: session?.user ?? null, isLoading: false });
       });
@@ -73,36 +92,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // FIX: Added 'return' so the UI receives the result { data, error }
     return await runAsync(set, async () => {
-      return await supabase.auth.signInWithPassword({
+      const result = await supabase.auth.signInWithPassword({
         email: dummyEmail,
         password: formattedKey,
       });
+
+      if (result.data.session) {
+        await AsyncStorage.setItem(
+          LOCAL_LAST_LOGIN_KEY,
+          new Date().toISOString()
+        );
+      }
+      return result;
     });
-  },
-
-  signUpWithKey: async () => {
-    const randomSuffix = Math.random()
-      .toString(36)
-      .substring(2, 6)
-      .toUpperCase();
-    const newKey = `RPG-${randomSuffix}`;
-    const dummyEmail = `${newKey}@foundersrpg.com`;
-
-    const { error } = await runAsync(set, async () => {
-      return await supabase.auth.signUp({
-        email: dummyEmail,
-        password: newKey,
-        options: {
-          data: {
-            username: newKey,
-            secret_key: newKey,
-          },
-        },
-      });
-    });
-
-    if (error) return { success: false };
-    return { success: true, key: newKey };
   },
 
   signInWithGoogle: async () => {
@@ -180,6 +182,10 @@ export const useAuthStore = create<AuthState>((set) => ({
                 session: sessionData.session,
                 user: sessionData.session.user,
               });
+              await AsyncStorage.setItem(
+                LOCAL_LAST_LOGIN_KEY,
+                new Date().toISOString()
+              );
               console.log(
                 "[AuthStore] Session stored! User ID:",
                 sessionData.session.user?.id
@@ -195,6 +201,10 @@ export const useAuthStore = create<AuthState>((set) => ({
             } = await supabase.auth.getSession();
             if (session) {
               set({ session, user: session.user });
+              await AsyncStorage.setItem(
+                LOCAL_LAST_LOGIN_KEY,
+                new Date().toISOString()
+              );
               console.log(
                 "[AuthStore] Fallback session found:",
                 session.user?.id
@@ -218,6 +228,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     await runAsync(set, () => supabase.auth.signOut());
+    await AsyncStorage.removeItem(LOCAL_LAST_LOGIN_KEY);
     set({ session: null, user: null });
   },
 }));
