@@ -3,6 +3,7 @@ import { FAQModal } from '@/components/profile/FAQModal';
 import { FeedbackModal } from '@/components/profile/FeedbackModal';
 import { UsernameChangeModal } from '@/components/profile/UsernameChangeModal';
 import { CornerDecorations } from '@/components/ui/CornerDecorations';
+import { SystemAlert } from '@/components/ui/SystemAlert';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -10,7 +11,7 @@ import { useUserStore } from '@/store/userStore';
 import { Ionicons } from '@expo/vector-icons'; // Using Expo Icons for consistent UI, Lucide is fine too but vector-icons has good coverage
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
     const [faqModalVisible, setFaqModalVisible] = useState(false);
+    const [logoutAlertVisible, setLogoutAlertVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = useCallback(async () => {
@@ -35,22 +37,14 @@ export default function ProfileScreen() {
         setRefreshing(false);
     }, [profile?.id]);
 
-    const handleLogout = async () => {
-        Alert.alert(
-            "Terminate Session?",
-            "Unsaved local data might be lost (though we sync often).",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Logout",
-                    style: "destructive",
-                    onPress: async () => {
-                        await signOut();
-                        router.replace('/auth/login');
-                    }
-                }
-            ]
-        );
+    const handleLogoutPress = () => {
+        setLogoutAlertVisible(true);
+    };
+
+    const confirmLogout = async () => {
+        setLogoutAlertVisible(false);
+        await signOut();
+        router.replace('/auth/login');
     };
 
     const SettingItem = ({
@@ -187,7 +181,7 @@ export default function ProfileScreen() {
 
                 {/* Logout */}
                 <TouchableOpacity
-                    onPress={handleLogout}
+                    onPress={handleLogoutPress}
                     className="mt-8 mb-12 flex-row justify-center items-center py-4 border border-red-900/50 rounded-lg bg-red-500/5"
                 >
                     <Ionicons name="power" size={18} color="#ef4444" style={{ marginRight: 8 }} />
@@ -214,6 +208,15 @@ export default function ProfileScreen() {
             <FAQModal
                 visible={faqModalVisible}
                 onClose={() => setFaqModalVisible(false)}
+                accentColor={accentColor}
+            />
+
+            <SystemAlert
+                visible={logoutAlertVisible}
+                title="Terminate Session?"
+                message="Unsaved local data might be lost (though we sync often). Are you sure you want to logout?"
+                type="warning"
+                onClose={confirmLogout}
                 accentColor={accentColor}
             />
 
