@@ -10,9 +10,10 @@ import { useAuthStore } from '@/store/authStore';
 import { useLevelStore } from '@/store/levelStore';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
+import { soundService } from '@/utils/soundService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -27,10 +28,18 @@ export default function HomeScreen() {
 
   // System Alert State for Welcome Back
   const [systemAlertVisible, setSystemAlertVisible] = useState(false);
-  const [systemAlertConfig, setSystemAlertConfig] = useState({
+  const [systemAlertConfig, setSystemAlertConfig] = useState<{
+    title: string;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    primaryLabel?: string;
+    onPrimaryPress?: () => void;
+    secondaryLabel?: string;
+    onSecondaryPress?: () => void;
+  }>({
     title: '',
     message: '',
-    type: 'info' as 'info' | 'success' | 'warning' | 'error'
+    type: 'info'
   });
 
   // Get icon color from Colors constant
@@ -117,21 +126,19 @@ export default function HomeScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to exit the facility?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await signOut();
-            router.replace('/auth/login');
-          }
-        }
-      ]
-    );
+    setSystemAlertConfig({
+      title: "Logout",
+      message: "Are you sure you want to exit the facility?",
+      type: 'warning',
+      primaryLabel: "LOGOUT",
+      onPrimaryPress: async () => {
+        await signOut();
+        router.replace('/auth/login');
+      },
+      secondaryLabel: "CANCEL",
+      onSecondaryPress: () => setSystemAlertVisible(false)
+    });
+    setSystemAlertVisible(true);
   };
 
   // --- Derived Stats logic ---
@@ -164,7 +171,35 @@ export default function HomeScreen() {
         onClose={() => setLogModalVisible(false)}
         onSuccess={() => {
           // Optional: explicit refresh if modal doesn't handle it
-          if (profile?.id) fetchProfile(profile.id);
+          if (profile?.id) {
+            fetchProfile(profile.id).then((updatedProfile) => {
+              // Check for Debuff Entry (Energy <= 0)
+              // updatedProfile might be null if fetch failed, but fetchProfile usually returns data.
+              // Actually fetchProfile in userStore returns Promise<Profile | null> and updates store.
+              // We should check the store state or the returned value.
+              // Let's use the result from the promise.
+
+              if (updatedProfile && (updatedProfile.energy || 0) <= 0) {
+                // Trigger Debuff Alert
+                setSystemAlertConfig({
+                  title: "SYSTEM CRITICAL",
+                  message: "Energy depleted. Paradox psychosis imminent. XP gain reduced by 50%. Rest immediately.",
+                  type: 'error',
+                  primaryLabel: "ACKNOWLEDGE",
+                  onPrimaryPress: () => {
+                    // soundService.play('debuff_applied'); // Maybe play on open? User asked "play ... when user has entered... after log modal closed... AND THEN play sound"
+                    // It says "show it... and then play the debuff sound".
+                    // Playing it immediately when showing the alert seems best.
+                  }
+                });
+                setSystemAlertVisible(true);
+                setTimeout(() => {
+                  // Small delay to ensure modal is visible/transitioning
+                  soundService.play('debuff_applied');
+                }, 300);
+              }
+            });
+          }
         }}
       />
 
@@ -176,6 +211,16 @@ export default function HomeScreen() {
         type={systemAlertConfig.type}
         onClose={() => setSystemAlertVisible(false)}
         accentColor={accentColor}
+        primaryLabel={systemAlertConfig.primaryLabel}
+        onPrimaryPress={systemAlertConfig.onPrimaryPress ? () => {
+          systemAlertConfig.onPrimaryPress?.();
+          setSystemAlertVisible(false); // Ensure it closes after action if not handled inside
+        } : undefined}
+        secondaryLabel={systemAlertConfig.secondaryLabel}
+        onSecondaryPress={systemAlertConfig.onSecondaryPress ? () => {
+          systemAlertConfig.onSecondaryPress?.();
+          setSystemAlertVisible(false);
+        } : undefined}
       />
 
       {/* Background Glow */}
@@ -200,7 +245,7 @@ export default function HomeScreen() {
 
           <View className="items-center justify-center mb-2">
             <Text className="text-6xl font-bold text-accent shadow-lg shadow-accent/50"
-              style={{ textShadowColor: accentColor, textShadowOffset: { width: 1, height:2 }, textShadowRadius: 12 }}
+              style={{ textShadowColor: accentColor, textShadowOffset: { width: 1, height: 2 }, textShadowRadius: 12 }}
             >
               {profile?.level || 1}
             </Text>

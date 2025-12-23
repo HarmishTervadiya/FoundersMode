@@ -1,5 +1,6 @@
 import { SystemAlert } from '@/components/ui/SystemAlert';
 import { useUserStore } from '@/store/userStore';
+import { soundService } from '@/utils/soundService';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -32,6 +33,7 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
 
     useEffect(() => {
         if (visible && profile?.username) {
+            soundService.play('modal_open'); // Play open sound
             setNewUsername(profile.username);
             setError(null);
 
@@ -55,7 +57,7 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
     const handleSave = async () => {
         const trimmed = newUsername.trim();
         if (trimmed.length < 3) {
-            setError('Username must be at least 3 characters.');
+            setError('Player Name must be at least 3 characters.');
             return;
         }
 
@@ -70,7 +72,7 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
         try {
             const isUnique = await checkUsernameUnique(trimmed);
             if (!isUnique) {
-                setError('Username is already unavailable.');
+                setError('Player Name is already unavailable.');
                 setIsChecking(false);
                 return;
             }
@@ -87,7 +89,7 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
                 onClose();
             }, 2000);
         } catch (err: any) {
-            setError(err.message || 'Failed to update username.');
+            setError(err.message || 'Failed to update Player Name.');
         } finally {
             setIsChecking(false);
         }
@@ -136,7 +138,7 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
                                         setNewUsername(text);
                                         setError(null);
                                     }}
-                                    placeholder="Enter username"
+                                    placeholder="Enter Player Name"
                                     placeholderTextColor="#4b5563"
                                     className="bg-gray-800 text-white p-4 rounded-lg border border-gray-700 font-medium"
                                     autoCapitalize="none"

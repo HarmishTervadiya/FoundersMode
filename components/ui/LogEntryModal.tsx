@@ -3,6 +3,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { LogAnalysisResult } from '@/services/ai';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
+import { soundService } from '@/utils/soundService';
 import { AlertTriangle, Brain, Lock, X } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -67,6 +68,7 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
             if (analysis) {
                 setResult(analysis);
                 setPhase('RESULTS');
+                soundService.play('xp_gained');
             } else {
                 // If null returned without error, generic error
                 throw new Error("Analysis failed to produce results.");
@@ -79,6 +81,7 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
 
     const handleClose = () => {
         if (phase === 'PROCESSING') return; // Prevent closing while processing
+        soundService.play('modal_open');
         onClose();
         if (phase === 'RESULTS') {
             onSuccess();
@@ -169,7 +172,10 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
                                             <Text className="text-red-500 text-xs mb-4">{error}</Text>
                                         )}
                                         <TouchableOpacity
-                                            onPress={handleProcess}
+                                            onPress={() => {
+                                                soundService.play('log_submitted');
+                                                handleProcess();
+                                            }}
                                             style={{ backgroundColor: accentColor, opacity: (!logContent.trim()) ? 0.5 : 1 }}
                                             disabled={!logContent.trim()}
                                             className="p-4 rounded-md items-center shadow-lg shadow-accent/20"

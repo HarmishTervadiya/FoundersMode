@@ -17,6 +17,8 @@ User Log:
 1. **Focus Points (FP):**
    - Base calculation on effort and output.
    - **Max 100 FP total per day** (The System caps this, but you output the raw score up to 100 for this single log).
+   - **CRITICAL RULE:** 'total_xp' MUST be exactly equal to 'total_fp'.
+   - **CRITICAL RULE:** The sum of all values in 'xp_breakdown' MUST equal 'total_xp'.
    - Tiers:
      - Tier 1 (Low Effort/Admin): 5-15 FP
      - Tier 2 (Standard/Core Work): 20-40 FP
@@ -35,7 +37,7 @@ User Log:
 Return a single JSON object. No markdown.
 {
   "total_fp": number, // Raw score for this log (0-100)
-  "total_xp": number, // Sum of breakdown
+  "total_xp": number, // MUST EQUAL total_fp
   "xp_breakdown": {
     "STR": number,
     "CHA": number,

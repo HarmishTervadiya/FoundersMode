@@ -18,6 +18,7 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from 'react-native-reanimated';
+import { SoundManager } from "@/components/SoundManager";
 
 // This is the default configuration
 configureReanimatedLogger({
@@ -221,6 +222,7 @@ export default function RootLayout() {
     <GestureHandlerRootView className={`flex-1 theme-${themeKey}`}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AuthGate>
+          <SoundManager />
           <Slot />
         </AuthGate>
         <StatusBar style="auto" />

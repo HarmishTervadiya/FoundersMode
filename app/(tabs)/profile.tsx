@@ -7,6 +7,7 @@ import { SystemAlert } from '@/components/ui/SystemAlert';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useUserStore } from '@/store/userStore';
 import { Ionicons } from '@expo/vector-icons'; // Using Expo Icons for consistent UI, Lucide is fine too but vector-icons has good coverage
 import { router } from 'expo-router';
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
 
     const { profile, toggleDailyReminder } = useUserStore();
     const { signOut } = useAuthStore();
+    const { soundEnabled, toggleSound } = useSettingsStore();
 
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
@@ -165,6 +167,14 @@ export default function ProfileScreen() {
                 />
 
                 <SettingItem
+                    label="Sound & Haptics"
+                    icon="musical-notes"
+                    isToggle
+                    toggleValue={soundEnabled}
+                    onPress={() => toggleSound(!soundEnabled)}
+                />
+
+                <SettingItem
                     label="System Feedback"
                     icon="chatbox-ellipses"
                     onPress={() => setFeedbackModalVisible(true)}
@@ -216,7 +226,11 @@ export default function ProfileScreen() {
                 title="Terminate Session?"
                 message="Unsaved local data might be lost (though we sync often). Are you sure you want to logout?"
                 type="warning"
-                onClose={confirmLogout}
+                onClose={() => setLogoutAlertVisible(false)}
+                primaryLabel="TERMINATE"
+                onPrimaryPress={confirmLogout}
+                secondaryLabel="CANCEL"
+                onSecondaryPress={() => setLogoutAlertVisible(false)}
                 accentColor={accentColor}
             />
 

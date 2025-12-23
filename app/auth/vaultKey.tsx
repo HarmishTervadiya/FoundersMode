@@ -1,13 +1,15 @@
 import { CornerDecorations } from '@/components/ui/CornerDecorations';
+import { AlertType, SystemAlert } from '@/components/ui/SystemAlert';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { useVaultStore } from '@/store/vaultStore';
+import { soundService } from '@/utils/soundService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, Key, User } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // const CornerDecorations = () => {
@@ -48,6 +50,8 @@ export default function VaultKeyScreen() {
     // Get icon color from Colors constant
     const iconColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
 
+
+
     // State
     const [step, setStep] = useState<'CHOICE' | 'LEGACY_INPUT' | 'FRESH_SETUP'>('CHOICE');
     const [legacyKey, setLegacyKey] = useState('');
@@ -58,6 +62,35 @@ export default function VaultKeyScreen() {
     const [usernameError, setUsernameError] = useState('');
     const [keyError, setKeyError] = useState('');
 
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        type: AlertType;
+        title: string;
+        message: string;
+        primaryLabel?: string;
+        onPrimaryPress?: () => void;
+    }>({
+        visible: false,
+        type: 'info',
+        title: '',
+        message: '',
+    });
+
+    const showAlert = (type: AlertType, title: string, message: string, primaryLabel?: string, onPrimaryPress?: () => void) => {
+        setAlertConfig({
+            visible: true,
+            type,
+            title,
+            message,
+            primaryLabel,
+            onPrimaryPress: onPrimaryPress ? () => {
+                onPrimaryPress();
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+            } : undefined
+        });
+    };
+
     // Check for error from migration screen
     useEffect(() => {
         if (params.error) {
@@ -65,6 +98,13 @@ export default function VaultKeyScreen() {
             setStep('LEGACY_INPUT');
         }
     }, [params.error]);
+
+    // Play sound when username modal opens
+    useEffect(() => {
+        if (showUsernameModal) {
+            soundService.play('modal_open');
+        }
+    }, [showUsernameModal]);
 
     // Validate username format
     const validateUsername = (name: string): string | null => {
@@ -78,7 +118,7 @@ export default function VaultKeyScreen() {
     // New User - Submit with Vault Key (uses it as username prefix)
     const handleCustomKeySubmit = async () => {
         if (!user) {
-            Alert.alert("Error", "No authenticated user found.");
+            showAlert('error', 'Error', 'No authenticated user found.');
             return;
         }
 
@@ -87,14 +127,13 @@ export default function VaultKeyScreen() {
         setIsLoading(true);
         try {
             await upsertProfile(user.id, { username: derivedUsername });
-            Alert.alert(
-                "Vault Key Created",
-                `Your key ${customKey} has been registered!`,
-                [{ text: "Enter Facility", onPress: () => router.replace('/(tabs)') }]
-            );
+            showAlert('success', 'Vault Key Created', `Your key ${customKey} has been registered!`, 'Enter Facility', () => {
+                soundService.play('level_up');
+                router.replace('/(tabs)');
+            });
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Failed to create vault key.");
+            showAlert('error', 'Error', 'Failed to create vault key.');
         } finally {
             setIsLoading(false);
         }
@@ -117,7 +156,7 @@ export default function VaultKeyScreen() {
         }
 
         if (!user) {
-            Alert.alert("Error", "No authenticated user.");
+            showAlert('error', 'Error', 'No authenticated user.');
             return;
         }
 
@@ -137,10 +176,15 @@ export default function VaultKeyScreen() {
             await upsertProfile(user.id, { username: trimmedUsername });
 
             setShowUsernameModal(false);
-            Alert.alert(
-                "Identity Confirmed",
+            showAlert(
+                'success',
+                'Identity Confirmed',
                 `Welcome, ${trimmedUsername}!`,
-                [{ text: "Enter Facility", onPress: () => router.replace('/(tabs)') }]
+                'Enter Facility',
+                () => {
+                    soundService.play('level_up');
+                    router.replace('/(tabs)');
+                }
             );
         } catch (e) {
             console.error(e);
@@ -153,7 +197,7 @@ export default function VaultKeyScreen() {
     // Legacy Key Submit (for returning users)
     const handleLegacySubmit = async () => {
         if (!user) {
-            Alert.alert("Error", "No authenticated user found.");
+            showAlert('error', 'Error', 'No authenticated user found.');
             return;
         }
 
@@ -341,6 +385,18 @@ export default function VaultKeyScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* System Alert */}
+            <SystemAlert
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                primaryLabel={alertConfig.primaryLabel}
+                onPrimaryPress={alertConfig.onPrimaryPress}
+                accentColor={iconColor}
+            />
 
         </SafeAreaView>
     );

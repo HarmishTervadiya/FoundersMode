@@ -11,6 +11,7 @@
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useLevelStore } from '@/store/levelStore';
+import { soundService } from '@/utils/soundService';
 import { Award, ChevronUp, Sparkles, Star } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Text, TouchableOpacity, View } from 'react-native';
@@ -317,6 +318,7 @@ export function LevelUpQueue({ previousLevel, newLevel, onComplete }: LevelUpQue
                 setVisibleSimpleLevels(levelNumbers);
                 setHasPopulated(true);
                 setIsReady(true);
+                soundService.play('level_up');
 
             } else {
                 onComplete();

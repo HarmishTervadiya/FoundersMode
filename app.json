@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FoundersMode",
+    "name": "FounderMode",
     "slug": "foundersmode",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,10 +13,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#050505",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -39,7 +37,8 @@
         }
       ],
       "expo-web-browser",
-      "./with-android-debug-keystore"
+      "./with-android-debug-keystore",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

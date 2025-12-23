@@ -27,8 +27,9 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Colors } from '@/constants/theme';
 import { ONBOARDING_STEPS } from '@/constants/theme.config';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/useTheme';  
 import { useOnboardingStore } from '@/store/onboardingStore';
+import { soundService } from '@/utils/soundService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -131,6 +132,11 @@ export default function OnboardingScreen() {
   const { currentStep, totalSteps, setStep, completeOnboarding } = useOnboardingStore();
   const [isVisible, setIsVisible] = useState(true);
 
+  // Sound on mount
+  useEffect(() => {
+    soundService.play('modal_open');
+  }, []);
+
   // Dynamic accent color
   const accentColor = (Colors as any)[themeKey]?.text || Colors.emerald.text;
 
@@ -143,6 +149,7 @@ export default function OnboardingScreen() {
     if (nextStep >= 0 && nextStep < totalSteps) {
       setIsVisible(false);
       setTimeout(() => {
+        soundService.play('onboarding_click');
         setStep(nextStep);
         setIsVisible(true);
       }, 300); // Wait for FadeOut

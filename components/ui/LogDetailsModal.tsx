@@ -3,6 +3,7 @@ import { X } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { CornerDecorations } from './CornerDecorations';
+import { soundService } from '@/utils/soundService';
 
 interface LogDetailsModalProps {
     visible: boolean;
@@ -12,6 +13,13 @@ interface LogDetailsModalProps {
 }
 
 export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ visible, log, onClose, accentColor }) => {
+
+    React.useEffect(() => {
+        // if (visible) {
+            soundService.play('modal_open');
+        // }
+    }, [visible]);
+
     if (!log) return null;
 
     return (

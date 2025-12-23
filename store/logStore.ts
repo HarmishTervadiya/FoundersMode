@@ -1,3 +1,4 @@
+import { soundService } from "@/utils/soundService";
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { ai, LogAnalysisResult } from "../services/ai";
@@ -90,7 +91,50 @@ export const useLogStore = create<LogState>((set, get) => ({
       // 2. AI Analysis
       const analysis = await ai.analyzeLog(content);
 
-      // 3. Apply Logic caps and costs
+      // 3. Apply Logic caps and adjustments
+
+      // CONSTRAINT: Total FP Max 100
+      if (analysis.total_fp > 100) analysis.total_fp = 100;
+
+      // CONSTRAINT: XP must equal FP
+      analysis.total_xp = analysis.total_fp;
+
+      // CONSTRAINT: Distributed XP must equal Total XP (Normalize)
+      const currentTotalBreakdown = Object.values(analysis.xp_breakdown).reduce(
+        (a, b) => a + b,
+        0
+      );
+
+      if (currentTotalBreakdown !== analysis.total_xp) {
+        // If mismatch, scale proportionally
+        if (currentTotalBreakdown > 0) {
+          const scaleRatio = analysis.total_xp / currentTotalBreakdown;
+          let newSum = 0;
+          const keys = Object.keys(analysis.xp_breakdown) as Array<
+            keyof typeof analysis.xp_breakdown
+          >;
+
+          // Scale all except last
+          for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            const newVal = Math.floor(analysis.xp_breakdown[key] * scaleRatio);
+            analysis.xp_breakdown[key] = newVal;
+            newSum += newVal;
+          }
+          // Assign remainder to last attribute to ensure exact Match
+          analysis.xp_breakdown[keys[keys.length - 1]] = Math.max(
+            0,
+            analysis.total_xp - newSum
+          );
+        } else {
+          // Edge case: breakdown 0 but XP > 0. Dump all into WIS (Zen) or STR (Builder) as fallback
+          // Or minimal spread
+          if (analysis.total_xp > 0) {
+            analysis.xp_breakdown.STR = analysis.total_xp;
+          }
+        }
+      }
+
       let finalFP = analysis.total_fp;
       let finalXp = analysis.total_xp;
       let finalBreakdown = { ...analysis.xp_breakdown };
@@ -129,6 +173,7 @@ export const useLogStore = create<LogState>((set, get) => ({
       const isDebuffed = currentEnergy <= 0;
 
       if (isDebuffed) {
+        // soundService.play("debuff_applied"); // Moved to UI
         finalXp = Math.floor(finalXp * 0.5);
         (
           Object.keys(finalBreakdown) as Array<keyof typeof finalBreakdown>
@@ -145,7 +190,7 @@ export const useLogStore = create<LogState>((set, get) => ({
         console.log(`[addLog] UPDATING existing log: ${existingDailyLog.id}`);
 
         // Concatenate Content
-        const newContent = `${existingDailyLog.content}\n\n${content}`;
+        const newContent = `${existingDailyLog.content}\n${content}`;
         const newTotalFP = (existingDailyLog.total_fp_awarded || 0) + finalFP;
         const newTotalXP = (existingDailyLog.total_xp_awarded || 0) + finalXp;
 
@@ -259,10 +304,17 @@ export const useLogStore = create<LogState>((set, get) => ({
       const newLevel = await levelStore
         .getState()
         .calculateLevelFromXp(newLifetimeXp);
+
+      if (currentProfile.level && newLevel > currentProfile.level) {
+        soundService.play("level_up");
+      }
+
       const newTitle = levelStore.getState().getLevelTitle(newLevel);
 
       // Streak Calculation
+      // Streak Calculation
       let newStreak = currentProfile.current_streak || 0;
+      console.log(`[addLog] Current profile streak: ${newStreak}`);
 
       // Use the last known log from the store state (before this new/updated one is fetched)
       // This is safer than profile date which might be out of sync.
@@ -270,10 +322,16 @@ export const useLogStore = create<LogState>((set, get) => ({
 
       if (!latestLog) {
         // No previous logs found -> First log ever
+        console.log(
+          "[addLog] No previous logs found. First log ever. Streak = 1"
+        );
         newStreak = 1;
       } else {
         const lastDateStr = toLocalYMD(latestLog.created_at);
         const todayStr = toLocalYMD(new Date());
+        console.log(
+          `[addLog] Last log date: ${lastDateStr}, Today: ${todayStr}`
+        );
 
         if (lastDateStr !== todayStr) {
           // Different day
@@ -281,20 +339,28 @@ export const useLogStore = create<LogState>((set, get) => ({
           const yesterday = new Date(now);
           yesterday.setDate(now.getDate() - 1);
           const yesterdayStr = toLocalYMD(yesterday);
+          console.log(`[addLog] Yesterday was: ${yesterdayStr}`);
 
           if (lastDateStr === yesterdayStr) {
             newStreak += 1;
+            console.log(`[addLog] Streak incremented to ${newStreak}`);
           } else {
             // Missed a day (or more)
             // Logic: If 'existingDailyLog' was found, we effectively "already logged today", so current_streak should be safe.
             // If it wasn't found, this is the FIRST log of the day.
             // If strict gap detected, reset.
             if (!existingDailyLog) {
+              console.log("[addLog] Streak reset to 1 (Missed a day)");
               newStreak = 1;
+            } else {
+              console.log(
+                "[addLog] Existing daily log found (logic gap?), keeping streak same."
+              );
             }
           }
+        } else {
+          console.log("[addLog] Same day log. Streak remains: " + newStreak);
         }
-        // If same day, streak doesn't increase
       }
 
       // --- MP CALCULATION ---
@@ -302,23 +368,6 @@ export const useLogStore = create<LogState>((set, get) => ({
       const wisReward = finalBreakdown.WIS || 0;
       calculatedEnergy = calculatedEnergy + wisReward;
       calculatedEnergy = Math.min(100, calculatedEnergy);
-
-      // const newStats = {
-      //   lifetime_xp: newLifetimeXp,
-      //   level: newLevel,
-      //   current_streak: newStreak,
-      //   energy: calculatedEnergy,
-      //   str_builder:
-      //     (currentProfile.str_builder || 0) + (finalBreakdown.STR || 0),
-      //   int_architect:
-      //     (currentProfile.int_architect || 0) + (finalBreakdown.INT || 0),
-      //   cha_hustler:
-      //     (currentProfile.cha_hustler || 0) + (finalBreakdown.CHA || 0),
-      //   con_grit: (currentProfile.con_grit || 0) + (finalBreakdown.CON || 0),
-      //   wis_zen: (currentProfile.wis_zen || 0) + (finalBreakdown.WIS || 0),
-      //   last_log_date: new Date().toISOString(),
-      //   title: newTitle,
-      // };
 
       let newStats = {};
       if (!newTitle) {
@@ -376,6 +425,10 @@ export const useLogStore = create<LogState>((set, get) => ({
       }
 
       // Success - Update Stores
+      soundService.play("log_submitted");
+      if (finalXp > 0) {
+        soundService.play("xp_gained");
+      }
       await get().fetchLogs(userId);
       await userStore.getState().fetchProfile(userId);
 

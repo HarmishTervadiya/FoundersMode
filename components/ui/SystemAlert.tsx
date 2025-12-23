@@ -12,6 +12,10 @@ interface SystemAlertProps {
     message: string;
     onClose: () => void;
     accentColor: string;
+    primaryLabel?: string;
+    onPrimaryPress?: () => void;
+    secondaryLabel?: string;
+    onSecondaryPress?: () => void;
 }
 
 export const SystemAlert: React.FC<SystemAlertProps> = ({
@@ -21,6 +25,10 @@ export const SystemAlert: React.FC<SystemAlertProps> = ({
     message,
     onClose,
     accentColor,
+    primaryLabel = "ACKNOWLEDGE",
+    onPrimaryPress,
+    secondaryLabel,
+    onSecondaryPress,
 }) => {
     const getIcon = () => {
         switch (type) {
@@ -71,15 +79,28 @@ export const SystemAlert: React.FC<SystemAlertProps> = ({
                         {message}
                     </Text>
 
-                    <TouchableOpacity
-                        onPress={onClose}
-                        className="w-full py-3 rounded-md"
-                        style={{ backgroundColor: themeColor }}
-                    >
-                        <Text className="text-white font-bold text-center uppercase text-xs tracking-widest">
-                            Acknowledge
-                        </Text>
-                    </TouchableOpacity>
+                    <View className="gap-3">
+                        {secondaryLabel && (
+                            <TouchableOpacity
+                                onPress={onSecondaryPress || onClose}
+                                className="w-full py-3 rounded-md bg-gray-800 border border-gray-700"
+                            >
+                                <Text className="text-gray-400 font-bold text-center uppercase text-xs tracking-widest">
+                                    {secondaryLabel}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                            onPress={onPrimaryPress || onClose}
+                            className="w-full py-3 rounded-md"
+                            style={{ backgroundColor: themeColor }}
+                        >
+                            <Text className="text-white font-bold text-center uppercase text-xs tracking-widest">
+                                {primaryLabel}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>
