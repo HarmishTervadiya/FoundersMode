@@ -1,24 +1,28 @@
 import "@/global.css";
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import * as Network from 'expo-network';
 import { Slot, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { SoundManager } from "@/components/SoundManager";
+import { SystemAlert } from '@/components/ui/SystemAlert';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAppVersionCheck } from '@/hooks/useAppVersionCheck';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUserStore } from '@/store/userStore';
+import { Linking } from 'react-native';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from 'react-native-reanimated';
-import { SoundManager } from "@/components/SoundManager";
 
 // This is the default configuration
 configureReanimatedLogger({
@@ -29,7 +33,121 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+// Separate component for Network Check - runs BEFORE VersionGate
+function NetworkGate({ children }: { children: React.ReactNode }) {
+  const [isConnected, setIsConnected] = useState(true);
+  const { key: themeKey } = useTheme();
+  const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
+  const backgroundColor = (Colors as any)[themeKey]?.background || Colors.emerald.background;
+
+  useEffect(() => {
+    const checkNetwork = async () => {
+      try {
+        const state = await Network.getNetworkStateAsync();
+        setIsConnected(state.isConnected ?? false);
+      } catch (e) {
+        // Fail open if check fails, but log it
+        console.error("Network check failed", e);
+        setIsConnected(true);
+      }
+    };
+
+    checkNetwork(); // Initial check
+
+    // Poll periodically or rely on User refresh/action?
+    // A simple interval is robust enough for now without complex NetInfo subscriptions
+    const interval = setInterval(checkNetwork, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!isConnected) {
+    return (
+      <View className={`flex-1 theme-${themeKey}`} style={{ backgroundColor: backgroundColor }}>
+        <SystemAlert
+          visible={true}
+          type="error"
+          title="NO CONNECTION"
+          message="Unable to connect to the Core Network. Check your internet connection."
+          onClose={() => { }} // Blocking
+          accentColor={accentColor}
+          primaryLabel="RETRY CONNECTION"
+          onPrimaryPress={() => {
+            // Trigger a manual check
+            Network.getNetworkStateAsync().then(state => {
+              setIsConnected(state.isConnected ?? false);
+            });
+          }}
+        />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+// Separate component for Version Check - runs BEFORE AuthGate
+function VersionGate({ children }: { children: React.ReactNode }) {
+  const { isOutdated, storeUrl, loading, error, checkVersion } = useAppVersionCheck();
+  const { key: themeKey } = useTheme();
+  const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
+  const backgroundColor = (Colors as any)[themeKey]?.background || Colors.emerald.background;
+
+
+  if (loading) {
+    return (
+      <View className={`flex-1 items-center justify-center p-8 theme-${themeKey}`} style={{ backgroundColor: backgroundColor }}>
+        <ActivityIndicator size="large" color={accentColor} />
+        <Text className="text-text-primary mt-4 font-mono font-bold tracking-widest text-center">
+          VERIFYING NEURAL LINK...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className={`flex-1 theme-${themeKey}`} style={{ backgroundColor: backgroundColor }}>
+        <SystemAlert
+          visible={true}
+          type="error"
+          title="CONNECTION INSTABILITY"
+          message="Failed to verify system integrity. The neural link is unstable."
+          onClose={() => { }} // Blocking
+          accentColor={accentColor}
+          primaryLabel="RETRY CONNECTION"
+          onPrimaryPress={() => checkVersion()}
+        />
+      </View>
+    );
+  }
+
+  if (isOutdated) {
+    return (
+      <View className={`flex-1 theme-${themeKey}`} style={{ backgroundColor: backgroundColor }}>
+        <SystemAlert
+          visible={true}
+          type="error"
+          title="SYSTEM OUTDATED"
+          message="Your Neural Link is incompatible with the Core Network. Update required to access the system."
+          onClose={() => { }} // Blocking, no close
+          accentColor={accentColor}
+          primaryLabel="UPDATE SYSTEM"
+          onPrimaryPress={() => {
+            if (storeUrl) {
+              Linking.openURL(storeUrl);
+            }
+          }}
+        />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 // Separate component for Auth Logic - runs AFTER RootLayout mounts
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, initialize, isLoading: authLoading, signOut } = useAuthStore();
   const { profile, fetchProfile, updateLastLogin, setWelcomeMessagePending } = useUserStore();
@@ -193,6 +311,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   }, [session, segments, authLoading, isNavigationReady, hasSeenOnboarding]);
 
+
+
   const { key: themeKey } = useTheme();
   const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
 
@@ -221,10 +341,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView className={`flex-1 theme-${themeKey}`}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AuthGate>
-          <SoundManager />
-          <Slot />
-        </AuthGate>
+        <NetworkGate>
+          <VersionGate>
+            <AuthGate>
+              <SoundManager />
+              <Slot />
+            </AuthGate>
+          </VersionGate>
+        </NetworkGate>
         <StatusBar style="auto" />
       </ThemeProvider>
     </GestureHandlerRootView>

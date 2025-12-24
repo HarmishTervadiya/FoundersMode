@@ -227,6 +227,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    // Attempt to clear Expo Push Token from DB before signing out
+    try {
+      const { useUserStore } = await import("./userStore");
+      const userStore = useUserStore.getState();
+      if (userStore.profile?.id) {
+        console.log("[AuthStore] Clearing Expo Push Token...");
+        // updateProfile handles the DB sync
+        await userStore.updateProfile({ expo_push_token: null });
+        console.log("[AuthStore] Expo Push Token cleared.");
+      }
+    } catch (e) {
+      console.error("[AuthStore] Failed to clear push token on logout", e);
+      // Constructive failure - continue with sign out anyway
+    }
+
     await runAsync(set, () => supabase.auth.signOut());
     await AsyncStorage.removeItem(LOCAL_LAST_LOGIN_KEY);
     set({ session: null, user: null });

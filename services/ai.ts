@@ -45,7 +45,7 @@ export const ai = {
 
       // Using 'gemini-1.5-flash' as standard efficient model.
       const response = await aiClient.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-flash-lite",
         contents: {
           role: "user",
           parts: [{ text: prompt }],

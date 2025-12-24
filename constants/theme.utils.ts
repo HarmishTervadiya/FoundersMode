@@ -28,7 +28,7 @@ export const colors = {
     return (Colors as any)[CURRENT_THEME]?.text || Colors.emerald.text;
   },
   get bg() {
-    return "#020617";
+    return "#151718";
   }, // slate-950
 };
 

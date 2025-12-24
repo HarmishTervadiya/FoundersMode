@@ -187,7 +187,7 @@ export default function ProfileScreen() {
                 />
 
                 {/* Developer Mode Only */}
-                <DevThemeToggle accentColor={accentColor} />
+                {/* <DevThemeToggle accentColor={accentColor} /> */}
 
                 {/* Logout */}
                 <TouchableOpacity
@@ -224,7 +224,7 @@ export default function ProfileScreen() {
             <SystemAlert
                 visible={logoutAlertVisible}
                 title="Terminate Session?"
-                message="Unsaved local data might be lost (though we sync often). Are you sure you want to logout?"
+                message="Disconnecting from the System. The market waits for no one. Are you sure you want to logout?"
                 type="warning"
                 onClose={() => setLogoutAlertVisible(false)}
                 primaryLabel="TERMINATE"
