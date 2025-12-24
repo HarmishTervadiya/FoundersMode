@@ -23,7 +23,7 @@ User Log:
      - Tier 1 (Low Effort/Admin): 5-15 FP
      - Tier 2 (Standard/Core Work): 20-40 FP
      - Tier 3 (High Impact/Deep Work): 45-65 FP
-     - Tier 4 (Critical/Launch/Breakthrough): 70-100 FP
+     - Tier 4 (Critical/Shipped/Launch/Breakthrough): 70-100 FP
    - **NOTE:** High FP (>65) drains user MP (Energy). >79 FP is dangerous "Overclocking".
 
 2. **Class Stats (XP Breakdown):**

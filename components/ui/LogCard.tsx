@@ -76,10 +76,19 @@ export const LogCard: React.FC<LogCardProps> = ({ log, onPress, accentColor }) =
 
 
                 {/* Footer: Category Tag */}
-                <View className="self-start bg-gray-800/50 px-2 py-1 rounded border border-gray-700">
-                    <Text className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor, opacity: 0.8 }}>
-                        {category}
-                    </Text>
+                <View className="flex-row gap-2">
+                    <View className="self-start bg-gray-800/50 px-2 py-1 rounded border border-gray-700">
+                        <Text className="text-[10px] font-bold tracking-widest uppercase" style={{ color: accentColor, opacity: 0.8 }}>
+                            {category}
+                        </Text>
+                    </View>
+                    {log.debuff_applied && (
+                        <View className="self-start bg-red-900/30 px-2 py-1 rounded border border-red-500/50">
+                            <Text className="text-[10px] font-bold tracking-widest uppercase text-red-500">
+                                DEBUFFED
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>

@@ -19,6 +19,7 @@ export interface Log {
   analysis_report: string | null;
   strategic_insight: string | null;
   xp_breakdown: Record<string, number> | null;
+  debuff_applied: boolean | null;
 }
 
 interface LogState {
@@ -213,6 +214,7 @@ export const useLogStore = create<LogState>((set, get) => ({
             xp_breakdown: mergedBreakdown,
             analysis_report: analysis.analysis_short,
             strategic_insight: analysis.insight,
+            debuff_applied: isDebuffed || existingDailyLog.debuff_applied,
           })
           .eq("id", existingDailyLog.id)
           .select()
@@ -249,6 +251,7 @@ export const useLogStore = create<LogState>((set, get) => ({
               xp_breakdown: mergedBreakdown,
               // Note: We don't preserve original created_at here easily without more logic,
               // but a new created_at is fine for a "restore".
+              debuff_applied: isDebuffed,
             };
             const { data: restored, error: resError } = await supabase
               .from("logs")
@@ -278,6 +281,7 @@ export const useLogStore = create<LogState>((set, get) => ({
           analysis_report: analysis.analysis_short,
           strategic_insight: analysis.insight,
           xp_breakdown: finalBreakdown,
+          debuff_applied: isDebuffed,
         };
 
         const { data: insertedData, error: insertError } = await supabase
@@ -434,6 +438,12 @@ export const useLogStore = create<LogState>((set, get) => ({
 
       set({ isLoading: false });
       console.log("[addLog] Operation completed successfully.");
+
+      // Update analysis object with FINAL applied values before returning
+      analysis.total_fp = finalFP;
+      analysis.total_xp = finalXp;
+      analysis.xp_breakdown = finalBreakdown;
+
       return analysis;
     } catch (error: any) {
       console.error("addLog failed:", error);

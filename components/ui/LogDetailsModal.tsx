@@ -1,9 +1,9 @@
 import { Log } from '@/store/logStore';
+import { soundService } from '@/utils/soundService';
 import { X } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { CornerDecorations } from './CornerDecorations';
-import { soundService } from '@/utils/soundService';
 
 interface LogDetailsModalProps {
     visible: boolean;
@@ -16,7 +16,7 @@ export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ visible, log, 
 
     React.useEffect(() => {
         // if (visible) {
-            soundService.play('modal_open');
+        soundService.play('modal_open');
         // }
     }, [visible]);
 
@@ -101,6 +101,21 @@ export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ visible, log, 
                                         <Text className="text-[10px] uppercase mr-2" style={{ color: accentColor }}>Total XP</Text>
                                         <Text className="text-white font-bold text-sm">+{log.total_xp_awarded}</Text>
                                     </View>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Debuff Warning */}
+                        {log.debuff_applied && (
+                            <View className="mt-4 mb-6 bg-red-900/20 p-4 rounded-lg border border-red-500/30 flex-row items-center">
+                                <View className="w-1.5 h-full bg-red-500 rounded-full mr-3 absolute left-0 top-0 bottom-0" />
+                                <View className="ml-2">
+                                    <Text className="text-red-500 text-xs font-bold tracking-widest uppercase mb-1">
+                                        Debuff Protocol Active
+                                    </Text>
+                                    <Text className="text-red-400/80 text-xs leading-4">
+                                        This log was recorded during state of exhaustion. Experience gain reduced by 50%.
+                                    </Text>
                                 </View>
                             </View>
                         )}
