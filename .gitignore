@@ -43,3 +43,7 @@ app-example
 /android
 
 .env
+
+/certs
+
+google-services.json

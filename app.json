@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "FoundersMode",
-    "slug": "FoundersMode",
+    "name": "FounderMode",
+    "slug": "foundersmode",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,13 +13,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#050505",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
+      "package": "com.harmis8469.FoundersMode"
     },
     "web": {
       "output": "static",
@@ -33,16 +33,23 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#050505"
         }
-      ]
+      ],
+      "expo-web-browser",
+      "./with-android-debug-keystore",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "586e1c30-5e1d-458e-95ce-a076bf7c1839"
+      }
+    },
+    "owner": "harmis8469"
   }
 }

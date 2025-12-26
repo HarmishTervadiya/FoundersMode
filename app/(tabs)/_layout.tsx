@@ -1,35 +1,85 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/useTheme';
+import { Tabs } from 'expo-router';
+import { LayoutDashboard, ScrollText, User } from 'lucide-react-native';
+import React from 'react';
+import { Platform, View } from 'react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { key: themeKey } = useTheme();
+  const themeColors = Colors[themeKey];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        // 1. The HUD Container
+        tabBarStyle: {
+          backgroundColor: themeColors.navBar,
+          borderTopWidth: 1,
+          borderTopColor: '#1f2937', // border-gray-800 - Keeping this static or could use a darker shade of accent
+          height: 120,
+          paddingTop: 10,
+          elevation: 0, // Remove Android shadow
+        },
+        // 2. Neon Accents
+        tabBarActiveTintColor: themeColors.accent,
+        tabBarInactiveTintColor: themeColors.tabIconDefault,
+        // 3. Typography (Monospace for RPG feel)
+        tabBarLabelStyle: {
+          fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+          fontSize: 10,
+          fontWeight: 'bold',
+          marginTop: 4,
+          textTransform: 'uppercase',
+          letterSpacing: 1,
+        },
+      }}
+      backBehavior='history'
+      
+    >
+
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'System',
+          tabBarIcon: ({ color, focused }) => (
+            <View className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}>
+              <LayoutDashboard size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+              {/* Active Indicator Dot */}
+              {focused && (
+                <View
+                  className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full shadow-sm"
+                  style={{ backgroundColor: themeColors.accent, shadowColor: themeColors.accent }}
+                />
+              )}
+            </View>
+          ),
         }}
       />
+
       <Tabs.Screen
-        name="explore"
+        name="history"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Logs',
+          tabBarIcon: ({ color, focused }) => (
+            <ScrollText size={24} color={color} strokeWidth={focused ? 2.5 : 2} style={focused ? {opacity: 1} : {opacity: 0.8}} />
+          ),
         }}
       />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Identity',
+          tabBarIcon: ({ color, focused }) => (
+            <View className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}>
+              <User size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
+
     </Tabs>
   );
 }
