@@ -72,7 +72,7 @@ export const LogCard: React.FC<LogCardProps> = ({ log, onPress, accentColor }) =
 
         {/* Content Preview */}
         <Text numberOfLines={2} className="mb-3 text-sm font-medium leading-5 text-gray-300">
-          {log.content?.replaceAll('\\n', ' ')}
+          {log.content?.replace(/\\n|\n/g, ' ')}
         </Text>
 
         {/* Footer: Category Tag */}

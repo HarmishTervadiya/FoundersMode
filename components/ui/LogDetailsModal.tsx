@@ -4,6 +4,7 @@ import { X } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { CornerDecorations } from './CornerDecorations';
+import { TextRenderer } from './TextRenderer';
 
 interface LogDetailsModalProps {
   visible: boolean;
@@ -59,9 +60,9 @@ export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({
 
           <ScrollView className="p-5">
             {/* Main Content */}
-            <Text className="mb-6 text-base font-medium leading-6 text-gray-300">
-              {log.content?.replaceAll('\\n', '\n')}
-            </Text>
+            <TextRenderer className="mb-6 text-base font-medium leading-6 text-gray-300">
+              {log.content ?? ''}
+            </TextRenderer>
 
             {/* AI Analysis Section */}
             {(log.analysis_report || log.strategic_insight) && (

@@ -65,8 +65,7 @@ export default function HomeScreen() {
         if (pending) {
           setSystemAlertConfig({
             title: 'System Online',
-            message:
-              'Welcome back, Player \n All systems are ready. Energy reserves have been partially restored.',
+            message: `Welcome back, Player\nAll systems are ready. Energy reserves have been partially restored.`,
             type: 'success',
           });
           setSystemAlertVisible(true);
@@ -168,36 +167,22 @@ export default function HomeScreen() {
         visible={logModalVisible}
         onClose={() => setLogModalVisible(false)}
         onSuccess={() => {
-          // Optional: explicit refresh if modal doesn't handle it
-          if (profile?.id) {
-            fetchProfile(profile.id).then((updatedProfile) => {
-              // Check for Debuff Entry (Energy <= 0)
-              // updatedProfile might be null if fetch failed, but fetchProfile usually returns data.
-              // Actually fetchProfile in userStore returns Promise<Profile | null> and updates store.
-              // We should check the store state or the returned value.
-              // Let's use the result from the promise.
-
-              if (updatedProfile && (updatedProfile.energy || 0) <= 0) {
-                // Trigger Debuff Alert
-                setSystemAlertConfig({
-                  title: 'SYSTEM CRITICAL',
-                  message:
-                    'Energy depleted. Paradox psychosis imminent. XP gain reduced by 50%. Rest immediately.',
-                  type: 'error',
-                  primaryLabel: 'ACKNOWLEDGE',
-                  onPrimaryPress: () => {
-                    // soundService.play('debuff_applied'); // Maybe play on open? User asked "play ... when user has entered... after log modal closed... AND THEN play sound"
-                    // It says "show it... and then play the debuff sound".
-                    // Playing it immediately when showing the alert seems best.
-                  },
-                });
-                setSystemAlertVisible(true);
-                setTimeout(() => {
-                  // Small delay to ensure modal is visible/transitioning
-                  soundService.play('debuff_applied');
-                }, 300);
-              }
+          // logStore.addLog() already calls fetchProfile internally.
+          // Read updated profile directly from store state — no extra network call needed.
+          const updatedProfile = useUserStore.getState().profile;
+          if (updatedProfile && (updatedProfile.energy || 0) <= 0) {
+            setSystemAlertConfig({
+              title: 'SYSTEM CRITICAL',
+              message:
+                'Energy depleted. Paradox psychosis imminent. XP gain reduced by 50%. Rest immediately.',
+              type: 'error',
+              primaryLabel: 'ACKNOWLEDGE',
+              onPrimaryPress: () => {},
             });
+            setSystemAlertVisible(true);
+            setTimeout(() => {
+              soundService.play('debuff_applied');
+            }, 300);
           }
         }}
       />
@@ -312,7 +297,7 @@ export default function HomeScreen() {
         <View className="mb-8 gap-2">
           <StatBar
             value={xpProgress}
-            label="Expereince"
+            label="Experience"
             maxValue={xpToNext}
             showValueText={true}
             heightClass="h-2"

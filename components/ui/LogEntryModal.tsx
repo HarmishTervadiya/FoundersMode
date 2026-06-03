@@ -5,7 +5,7 @@ import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
 import { soundService } from '@/utils/soundService';
 import { AlertTriangle, Brain, Lock, X } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -31,7 +31,7 @@ type ModalPhase = 'INPUT' | 'PROCESSING' | 'RESULTS';
 export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProps) {
   const { key: themeKey } = useTheme();
   const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
-  const { addLog, isLoading: storeLoading } = useLogStore();
+  const { addLog, isLoading: storeLoading, logs } = useLogStore();
   const { profile } = useUserStore();
 
   const [phase, setPhase] = useState<ModalPhase>('INPUT');
@@ -39,12 +39,15 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
   const [result, setResult] = useState<LogAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Calculate today's FP
-  const { logs } = useLogStore();
+  // Calculate today's FP — single store subscription, memoized
   const todayStr = toLocalYMD(new Date());
-  const todayFP = logs
-    .filter((l) => toLocalYMD(l.created_at) === todayStr)
-    .reduce((sum, l) => sum + (l.total_fp_awarded || 0), 0);
+  const todayFP = useMemo(
+    () =>
+      logs
+        .filter((l) => toLocalYMD(l.created_at) === todayStr)
+        .reduce((sum, l) => sum + (l.total_fp_awarded || 0), 0),
+    [logs, todayStr]
+  );
   const isLocked = todayFP >= 100;
 
   // Fade animation
@@ -68,6 +71,10 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
 
   const handleProcess = async () => {
     if (!logContent.trim() || !profile?.id) return;
+    if (logContent.trim().length < 20) {
+      setError('Entry too short — add more detail for accurate analysis (min 20 characters).');
+      return;
+    }
 
     setPhase('PROCESSING');
     setError(null);
@@ -90,7 +97,6 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
 
   const handleClose = () => {
     if (phase === 'PROCESSING') return; // Prevent closing while processing
-    soundService.play('modal_open');
     onClose();
     if (phase === 'RESULTS') {
       onSuccess();
@@ -159,10 +165,12 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
                       </Text>
                       <TextInput
                         multiline
-                        numberOfLines={6}
-                        maxLength={300}
+                        maxLength={500}
                         value={logContent}
-                        onChangeText={setLogContent}
+                        onChangeText={(text) => {
+                          setLogContent(text);
+                          if (error) setError(null);
+                        }}
                         placeholder="Deploying new features, closing deals, fixing bugs..."
                         placeholderTextColor="#4b5563"
                         className="min-h-[150px] rounded-md border border-gray-700 bg-bg-base p-4 text-base text-text-primary"
@@ -170,18 +178,15 @@ export function LogEntryModal({ visible, onClose, onSuccess }: LogEntryModalProp
                       />
                       <View className="mt-2 flex-row justify-end">
                         <Text
-                          className={`text-xs font-medium ${logContent.length > 280 ? 'text-red-500' : 'text-text-dim'}`}
+                          className={`text-xs font-medium ${logContent.length > 450 ? 'text-red-500' : 'text-text-dim'}`}
                         >
-                          {logContent.length} / 300
+                          {logContent.length} / 500
                         </Text>
                       </View>
                     </View>
                     {error && <Text className="mb-4 text-xs text-red-500">{error}</Text>}
                     <TouchableOpacity
-                      onPress={() => {
-                        soundService.play('log_submitted');
-                        handleProcess();
-                      }}
+                      onPress={handleProcess}
                       style={{
                         backgroundColor: accentColor,
                         opacity: !logContent.trim() ? 0.5 : 1,
