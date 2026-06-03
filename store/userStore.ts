@@ -1,10 +1,10 @@
-import { create } from "zustand";
-import { supabase } from "../lib/supabase";
-import { Database } from "../types/supabase.types";
-import { runAsync } from "../utils/storeHelpers";
+import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
+import { Database } from '../types/supabase.types';
+import { runAsync } from '../utils/storeHelpers';
 
 // Exact type derived from your Database schema
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface UserState {
   profile: Profile | null;
@@ -38,31 +38,23 @@ export const useUserStore = create<UserState>((set, get) => ({
   error: null,
   welcomeMessagePending: false,
 
-  setWelcomeMessagePending: (pending: boolean) =>
-    set({ welcomeMessagePending: pending }),
+  setWelcomeMessagePending: (pending: boolean) => set({ welcomeMessagePending: pending }),
 
   fetchProfile: async (userId: string) => {
-    console.log("[UserStore] fetchProfile starting for:", userId);
+    console.log('[UserStore] fetchProfile starting for:', userId);
     const { data, error } = await runAsync<Profile>(set, async () => {
-      console.log("[UserStore] Supabase request starting...");
-      const result = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      console.log(
-        "[UserStore] Supabase request finished. Error:",
-        !!result.error
-      );
+      console.log('[UserStore] Supabase request starting...');
+      const result = await supabase.from('profiles').select('*').eq('id', userId).single();
+      console.log('[UserStore] Supabase request finished. Error:', !!result.error);
       return result;
     });
 
     if (error) {
-      console.error("[UserStore] fetchProfile error:", error);
+      console.error('[UserStore] fetchProfile error:', error);
     }
 
     if (!error && data) {
-      console.log("[UserStore] fetchProfile success");
+      console.log('[UserStore] fetchProfile success');
       set({ profile: data });
       return data;
     }
@@ -78,15 +70,12 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // 2. Perform DB Sync with Error Handling
     const { error } = await runAsync(set, async () => {
-      return await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", profile.id);
+      return await supabase.from('profiles').update(updates).eq('id', profile.id);
     });
 
     // 3. Rollback if failed
     if (error) {
-      console.log("Update failed, rolling back optimistic update");
+      console.log('Update failed, rolling back optimistic update');
       set({ profile }); // Reverts to the state before the optimistic update
     }
   },
@@ -106,7 +95,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     // 2. Perform DB Sync
     const { data, error } = await runAsync<Profile>(set, async () => {
       return await supabase
-        .from("profiles")
+        .from('profiles')
         .upsert({ id: userId, ...updates })
         .select()
         .single();
@@ -114,7 +103,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // 3. Rollback/Confirm
     if (error) {
-      console.log("Upsert failed, rolling back");
+      console.log('Upsert failed, rolling back');
       set({ profile }); // Reset to previous
     } else if (data) {
       set({ profile: data }); // Ensure we have the server-side version (e.g. timestamps)
@@ -126,13 +115,13 @@ export const useUserStore = create<UserState>((set, get) => ({
     if (trimmed.length < 3) return false;
 
     const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("username", trimmed)
+      .from('profiles')
+      .select('id')
+      .ilike('username', trimmed)
       .limit(1);
 
     if (error) {
-      console.error("Username check failed:", error);
+      console.error('Username check failed:', error);
       return false;
     }
 
@@ -146,14 +135,14 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       // First, try to fetch existing profile (use maybeSingle to avoid error when not found)
       const { data: existingProfile, error: fetchError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .maybeSingle();
 
       if (existingProfile) {
         // Profile exists - return it
-        console.log("[UserStore] Existing profile found:", existingProfile.id);
+        console.log('[UserStore] Existing profile found:', existingProfile.id);
         set({ profile: existingProfile, isLoading: false });
         return { profile: existingProfile, isNew: false };
       }
@@ -174,13 +163,13 @@ export const useUserStore = create<UserState>((set, get) => ({
       };
 
       const { data: newProfile, error: createError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .insert(newProfileData)
         .select()
         .single();
 
       if (createError) {
-        console.error("Profile creation failed:", createError);
+        console.error('Profile creation failed:', createError);
         set({ isLoading: false, error: createError.message });
         return { profile: null, isNew: false };
       }
@@ -188,7 +177,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       set({ profile: newProfile, isLoading: false });
       return { profile: newProfile, isNew: true };
     } catch (err: any) {
-      console.error("createOrFetchProfile error:", err);
+      console.error('createOrFetchProfile error:', err);
       set({ isLoading: false, error: err.message });
       return { profile: null, isNew: false };
     }
@@ -199,15 +188,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     if (!profile) return;
 
     // Also update local storage to keep them in sync
-    const { LOCAL_LAST_LOGIN_KEY } = await import("./authStore");
-    await import("@react-native-async-storage/async-storage").then(
-      async (mod) => {
-        await mod.default.setItem(
-          LOCAL_LAST_LOGIN_KEY,
-          new Date().toISOString()
-        );
-      }
-    );
+    const { LOCAL_LAST_LOGIN_KEY } = await import('./authStore');
+    await import('@react-native-async-storage/async-storage').then(async (mod) => {
+      await mod.default.setItem(LOCAL_LAST_LOGIN_KEY, new Date().toISOString());
+    });
 
     await updateProfile({ last_log_date: new Date().toISOString() });
   },
@@ -235,12 +219,12 @@ export const useUserStore = create<UserState>((set, get) => ({
     // 2. Perform DB Sync
     const { data, error } = await runAsync<Profile>(set, async () => {
       return await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           username: newUsername,
           last_username_change: new Date().toISOString(),
         })
-        .eq("id", profile.id)
+        .eq('id', profile.id)
         .select()
         .single();
     });
@@ -269,9 +253,9 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     const { data, error } = await runAsync<Profile>(set, async () => {
       return await supabase
-        .from("profiles")
+        .from('profiles')
         .update({ daily_reminder: isEnabled })
-        .eq("id", profile.id)
+        .eq('id', profile.id)
         .select()
         .single();
     });
@@ -291,11 +275,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const now = new Date();
 
     // Reset hours to compare dates only
-    const d1 = new Date(
-      lastLogDate.getFullYear(),
-      lastLogDate.getMonth(),
-      lastLogDate.getDate()
-    );
+    const d1 = new Date(lastLogDate.getFullYear(), lastLogDate.getMonth(), lastLogDate.getDate());
     const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Difference in days
@@ -324,9 +304,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       if (newEnergy !== currentEnergy) {
         const { data, error } = await runAsync<Profile>(set, async () => {
           return await supabase
-            .from("profiles")
+            .from('profiles')
             .update({ energy: newEnergy })
-            .eq("id", profile.id)
+            .eq('id', profile.id)
             .select() // return updated row
             .single();
         });

@@ -1,9 +1,9 @@
-import { create } from "zustand";
-import { supabase } from "../lib/supabase";
-import { Database } from "../types/supabase.types";
+import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
+import { Database } from '../types/supabase.types';
 
 // Type from supabase schema
-type Level = Database["public"]["Tables"]["levels"]["Row"];
+type Level = Database['public']['Tables']['levels']['Row'];
 
 export interface LevelInfo {
   level: number;
@@ -36,13 +36,10 @@ export const useLevelStore = create<LevelState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { data, error } = await supabase
-        .from("levels")
-        .select("*")
-        .in("level", levels);
+      const { data, error } = await supabase.from('levels').select('*').in('level', levels);
 
       if (error) {
-        console.error("[LevelStore] Failed to fetch levels:", error.message);
+        console.error('[LevelStore] Failed to fetch levels:', error.message);
         set({ isLoading: false, error: error.message });
         return;
       }
@@ -57,10 +54,10 @@ export const useLevelStore = create<LevelState>((set, get) => ({
         });
       }
 
-      console.log("[LevelStore] Fetched level data for levels:", levels);
+      console.log('[LevelStore] Fetched level data for levels:', levels);
       set({ levelsData: levelsMap, isLoading: false });
     } catch (err: any) {
-      console.error("[LevelStore] Error:", err.message);
+      console.error('[LevelStore] Error:', err.message);
       set({ isLoading: false, error: err.message });
     }
   },
@@ -70,15 +67,12 @@ export const useLevelStore = create<LevelState>((set, get) => ({
 
     try {
       const { data, error } = await supabase
-        .from("levels")
-        .select("*")
-        .order("level", { ascending: true });
+        .from('levels')
+        .select('*')
+        .order('level', { ascending: true });
 
       if (error) {
-        console.error(
-          "[LevelStore] Failed to fetch all levels:",
-          error.message
-        );
+        console.error('[LevelStore] Failed to fetch all levels:', error.message);
         set({ isLoading: false, error: error.message });
         return;
       }
@@ -93,10 +87,10 @@ export const useLevelStore = create<LevelState>((set, get) => ({
         });
       }
 
-      console.log("[LevelStore] Fetched all levels:", levelsMap.size);
+      console.log('[LevelStore] Fetched all levels:', levelsMap.size);
       set({ levelsData: levelsMap, isLoading: false });
     } catch (err: any) {
-      console.error("[LevelStore] Error:", err.message);
+      console.error('[LevelStore] Error:', err.message);
       set({ isLoading: false, error: err.message });
     }
   },

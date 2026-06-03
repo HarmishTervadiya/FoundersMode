@@ -19,11 +19,7 @@ export function HelloWave() {
     transform: [{ rotate: `${rotationAnimation.value}deg` }],
   }));
 
-  return (
-    <Animated.Text style={[styles.text, animatedStyle]}>
-      👋
-    </Animated.Text>
-  );
+  return <Animated.Text style={[styles.text, animatedStyle]}>👋</Animated.Text>;
 }
 
 const styles = StyleSheet.create({

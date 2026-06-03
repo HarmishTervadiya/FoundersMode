@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { supabase } from "../lib/supabase";
+import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 
 // Types
 interface VaultUser {
@@ -64,11 +64,7 @@ interface VaultState {
 
   // Actions
   validateVaultKey: (secretKey: string) => Promise<VaultValidationResult>;
-  claimVaultKey: (
-    secretKey: string,
-    userId: string,
-    currentLevel: number
-  ) => Promise<ClaimResult>;
+  claimVaultKey: (secretKey: string, userId: string, currentLevel: number) => Promise<ClaimResult>;
   setMigrationProgress: (progress: number, message: string) => void;
   resetState: () => void;
 }
@@ -82,7 +78,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   isValidating: false,
   isMigrating: false,
   migrationProgress: 0,
-  migrationMessage: "",
+  migrationMessage: '',
   error: null,
   migratedStats: null,
 
@@ -95,44 +91,39 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       isValidating: false,
       isMigrating: false,
       migrationProgress: 0,
-      migrationMessage: "",
+      migrationMessage: '',
       error: null,
       migratedStats: null,
     });
   },
 
-  validateVaultKey: async (
-    secretKey: string
-  ): Promise<VaultValidationResult> => {
+  validateVaultKey: async (secretKey: string): Promise<VaultValidationResult> => {
     set({ isValidating: true, error: null });
 
     const normalizedKey = secretKey.toUpperCase().trim();
-    console.log("[VaultStore] Validating key:", normalizedKey);
-    console.log("[VaultStore] Original input:", secretKey);
+    console.log('[VaultStore] Validating key:', normalizedKey);
+    console.log('[VaultStore] Original input:', secretKey);
 
     try {
       // Query vault_users for matching secret_key
-      console.log("[VaultStore] Querying vault_users table...");
+      console.log('[VaultStore] Querying vault_users table...');
       const { data, error } = await supabase
-        .from("vault_users")
-        .select("*")
-        .eq("secret_key", normalizedKey)
+        .from('vault_users')
+        .select('*')
+        .eq('secret_key', normalizedKey)
         .maybeSingle();
 
-      console.log("[VaultStore] Query result - data:", data);
-      console.log("[VaultStore] Query result - error:", error);
+      console.log('[VaultStore] Query result - data:', data);
+      console.log('[VaultStore] Query result - error:', error);
 
       if (error) {
-        console.error("[VaultStore] Database error:", error.message);
+        console.error('[VaultStore] Database error:', error.message);
         set({ isValidating: false, error: error.message });
         return { exists: false, isClaimed: false, error: error.message };
       }
 
       if (!data) {
-        console.log(
-          "[VaultStore] No matching record found for key:",
-          normalizedKey
-        );
+        console.log('[VaultStore] No matching record found for key:', normalizedKey);
         set({ isValidating: false });
         return { exists: false, isClaimed: false };
       }
@@ -164,42 +155,42 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const { setMigrationProgress } = get();
 
       // Step 1: Validate key again
-      setMigrationProgress(10, "VALIDATING VAULT KEY...");
+      setMigrationProgress(10, 'VALIDATING VAULT KEY...');
       await new Promise((r) => setTimeout(r, 500));
 
       const { data: vaultUser, error: vaultError } = await supabase
-        .from("vault_users")
-        .select("*")
-        .eq("secret_key", secretKey.toUpperCase().trim())
+        .from('vault_users')
+        .select('*')
+        .eq('secret_key', secretKey.toUpperCase().trim())
         .single();
 
       if (vaultError || !vaultUser) {
-        set({ isMigrating: false, error: "Vault key not found" });
-        return { success: false, stats: null, error: "Vault key not found" };
+        set({ isMigrating: false, error: 'Vault key not found' });
+        return { success: false, stats: null, error: 'Vault key not found' };
       }
 
       if (vaultUser.claimed_by) {
-        set({ isMigrating: false, error: "Vault key already claimed" });
+        set({ isMigrating: false, error: 'Vault key already claimed' });
         return {
           success: false,
           stats: null,
-          error: "Vault key already claimed",
+          error: 'Vault key already claimed',
         };
       }
 
       // Step 2: Get legacy_id
       const legacyId = vaultUser.legacy_id;
-      setMigrationProgress(20, "DECRYPTING LEGACY DATA...");
+      setMigrationProgress(20, 'DECRYPTING LEGACY DATA...');
       await new Promise((r) => setTimeout(r, 800));
 
       // Step 3: Fetch vault_logs by legacy_user_id
-      setMigrationProgress(35, "LOCATING ARCHIVED RECORDS...");
+      setMigrationProgress(35, 'LOCATING ARCHIVED RECORDS...');
       await new Promise((r) => setTimeout(r, 600));
 
       const { data: vaultLogs, error: logsError } = await supabase
-        .from("vault_logs")
-        .select("*")
-        .eq("legacy_user_id", legacyId);
+        .from('vault_logs')
+        .select('*')
+        .eq('legacy_user_id', legacyId);
 
       if (logsError) {
         set({ isMigrating: false, error: logsError.message });
@@ -227,7 +218,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         conGrit += log.con_grit || 0;
       }
 
-      console.log("[VaultStore] Calculated totals - XP:", totalXp, "Stats:", {
+      console.log('[VaultStore] Calculated totals - XP:', totalXp, 'Stats:', {
         strBuilder,
         intArchitect,
         chaHustler,
@@ -235,31 +226,31 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         conGrit,
       });
 
-      setMigrationProgress(50, "CALCULATING LEGACY XP...");
+      setMigrationProgress(50, 'CALCULATING LEGACY XP...');
       await new Promise((r) => setTimeout(r, 1000));
 
       // Step 5: Calculate new level FIRST
       const newLevel = calculateLevel(totalXp);
       const levelsGained = Math.max(0, newLevel - currentLevel);
       console.log(
-        "[VaultStore] Level calculation - Previous:",
+        '[VaultStore] Level calculation - Previous:',
         currentLevel,
-        "New:",
+        'New:',
         newLevel,
-        "Gained:",
+        'Gained:',
         levelsGained
       );
 
-      setMigrationProgress(60, "RESTORING YOUR LEGACY...");
+      setMigrationProgress(60, 'RESTORING YOUR LEGACY...');
       await new Promise((r) => setTimeout(r, 1000));
 
       // Step 6: Update profiles FIRST (before inserting logs due to FK constraint)
-      setMigrationProgress(70, "UPDATING PROFILE STATS...");
+      setMigrationProgress(70, 'UPDATING PROFILE STATS...');
       await new Promise((r) => setTimeout(r, 800));
 
       const derivedUsername = `VK_${secretKey.toUpperCase().trim()}`;
       const { error: profileError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           username: derivedUsername,
           lifetime_xp: totalXp,
@@ -270,18 +261,15 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           wis_zen: wisZen,
           con_grit: conGrit,
         })
-        .eq("id", userId);
+        .eq('id', userId);
 
       if (profileError) {
-        console.error(
-          "[VaultStore] Profile update failed:",
-          profileError.message
-        );
+        console.error('[VaultStore] Profile update failed:', profileError.message);
         set({ isMigrating: false, error: profileError.message });
         return { success: false, stats: null, error: profileError.message };
       }
 
-      console.log("[VaultStore] Profile updated successfully");
+      console.log('[VaultStore] Profile updated successfully');
 
       // Step 7: NOW migrate logs (profile exists, FK constraint satisfied)
       if (logs.length > 0) {
@@ -291,7 +279,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         // Map vault_logs to logs table format (user_id instead of legacy_user_id)
         const migratedLogs = logs.map((log) => ({
           user_id: userId, // New user's ID
-          content: log.content || "",
+          content: log.content || '',
           created_at: log.created_at,
           difficulty_tier: log.difficulty_tier,
           total_fp_awarded: log.total_fp_awarded,
@@ -301,52 +289,39 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           xp_breakdown: log.xp_breakdown,
         }));
 
-        console.log(
-          "[VaultStore] Inserting",
-          migratedLogs.length,
-          "logs into logs table"
-        );
+        console.log('[VaultStore] Inserting', migratedLogs.length, 'logs into logs table');
 
-        const { error: insertError } = await supabase
-          .from("logs")
-          .insert(migratedLogs);
+        const { error: insertError } = await supabase.from('logs').insert(migratedLogs);
 
         if (insertError) {
-          console.error(
-            "[VaultStore] Failed to insert logs:",
-            insertError.message
-          );
+          console.error('[VaultStore] Failed to insert logs:', insertError.message);
           // Continue anyway - profile update is more important
         } else {
-          console.log(
-            "[VaultStore] Successfully migrated",
-            logs.length,
-            "logs"
-          );
+          console.log('[VaultStore] Successfully migrated', logs.length, 'logs');
         }
       }
 
-      setMigrationProgress(90, "FINALIZING VAULT CLAIM...");
+      setMigrationProgress(90, 'FINALIZING VAULT CLAIM...');
       await new Promise((r) => setTimeout(r, 800));
 
       // Step 8: Mark vault_users as claimed
       const { error: claimError } = await supabase
-        .from("vault_users")
+        .from('vault_users')
         .update({
           claimed_by: userId,
           claimed_at: new Date().toISOString(),
         })
-        .eq("secret_key", secretKey.toUpperCase().trim());
+        .eq('secret_key', secretKey.toUpperCase().trim());
 
       if (claimError) {
-        console.error("[VaultStore] Claim update failed:", claimError.message);
+        console.error('[VaultStore] Claim update failed:', claimError.message);
         set({ isMigrating: false, error: claimError.message });
         return { success: false, stats: null, error: claimError.message };
       }
 
-      console.log("[VaultStore] Vault key claimed successfully");
+      console.log('[VaultStore] Vault key claimed successfully');
 
-      setMigrationProgress(100, "MIGRATION COMPLETE!");
+      setMigrationProgress(100, 'MIGRATION COMPLETE!');
       await new Promise((r) => setTimeout(r, 1500));
 
       const stats: MigratedStats = {

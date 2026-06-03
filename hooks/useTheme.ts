@@ -1,11 +1,6 @@
-import {
-  CURRENT_THEME,
-  THEME_CLASSES,
-  THEME_NAMES,
-  type ThemeKey,
-} from "@/constants/theme.config";
-import { usePreferenceStore } from "@/store/preferenceStore";
-import { useMemo } from "react";
+import { CURRENT_THEME, THEME_CLASSES, THEME_NAMES, type ThemeKey } from '@/constants/theme.config';
+import { usePreferenceStore } from '@/store/preferenceStore';
+import { useMemo } from 'react';
 
 export interface ThemeConfig {
   key: ThemeKey;

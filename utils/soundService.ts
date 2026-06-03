@@ -1,10 +1,10 @@
 export const SOUND_NAMES = [
-  "log_submitted",
-  "xp_gained",
-  "debuff_applied",
-  "level_up",
-  "modal_open",
-  "onboarding_click",
+  'log_submitted',
+  'xp_gained',
+  'debuff_applied',
+  'level_up',
+  'modal_open',
+  'onboarding_click',
 ] as const;
 
 export type SoundName = (typeof SOUND_NAMES)[number];

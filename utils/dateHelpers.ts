@@ -8,15 +8,13 @@
  * @param date - Date object to format. Defaults to now if not provided.
  * @returns String in "YYYY-MM-DD" format (e.g., "2023-10-27")
  */
-export const toLocalYMD = (
-  dateOrString: Date | string = new Date()
-): string => {
+export const toLocalYMD = (dateOrString: Date | string = new Date()): string => {
   let date: Date;
 
-  if (typeof dateOrString === "string") {
+  if (typeof dateOrString === 'string') {
     // Handle SQL format "2023-01-01 12:00:00+00" -> "2023-01-01T12:00:00+00"
     // Also handles standard ISO strings.
-    const isoString = dateOrString.trim().replace(" ", "T");
+    const isoString = dateOrString.trim().replace(' ', 'T');
     date = new Date(isoString);
   } else {
     date = dateOrString;
@@ -24,15 +22,15 @@ export const toLocalYMD = (
 
   // Check validity
   if (isNaN(date.getTime())) {
-    console.warn("toLocalYMD received invalid date:", dateOrString);
+    console.warn('toLocalYMD received invalid date:', dateOrString);
     // Fallback to today to avoid breaking UI/Logic, or return safely?
     // Returning correct "today" might hide bugs, but preventing crash is priority.
     // For Logic comparison, returning "Invalid" is safer so we don't accidentally match.
-    return "Invalid-Date";
+    return 'Invalid-Date';
   }
 
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 };

@@ -39,7 +39,7 @@ export default function HomeScreen() {
   }>({
     title: '',
     message: '',
-    type: 'info'
+    type: 'info',
   });
 
   // Get icon color from Colors constant
@@ -64,9 +64,10 @@ export default function HomeScreen() {
 
         if (pending) {
           setSystemAlertConfig({
-            title: "System Online",
-            message: "Welcome back, Player \n All systems are ready. Energy reserves have been partially restored.",
-            type: 'success'
+            title: 'System Online',
+            message:
+              'Welcome back, Player \n All systems are ready. Energy reserves have been partially restored.',
+            type: 'success',
           });
           setSystemAlertVisible(true);
           // Clear the pending state
@@ -94,8 +95,6 @@ export default function HomeScreen() {
       const prev = parseInt(params.previousLevel as string);
       const next = parseInt(params.newLevel as string);
 
-
-
       setPreviousLevel(prev);
       setNewLevel(next);
       setShowLevelUp(true);
@@ -112,31 +111,27 @@ export default function HomeScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     if (profile?.id) {
-      await Promise.all([
-        fetchProfile(profile.id),
-        fetchLogs(profile.id)
-      ]);
+      await Promise.all([fetchProfile(profile.id), fetchLogs(profile.id)]);
     }
     setRefreshing(false);
   };
 
   const handleLevelUpComplete = () => {
-
     setShowLevelUp(false);
   };
 
   const handleLogout = () => {
     setSystemAlertConfig({
-      title: "Logout",
-      message: "Are you sure you want to exit the facility?",
+      title: 'Logout',
+      message: 'Are you sure you want to exit the facility?',
       type: 'warning',
-      primaryLabel: "LOGOUT",
+      primaryLabel: 'LOGOUT',
       onPrimaryPress: async () => {
         await signOut();
         router.replace('/auth/login');
       },
-      secondaryLabel: "CANCEL",
-      onSecondaryPress: () => setSystemAlertVisible(false)
+      secondaryLabel: 'CANCEL',
+      onSecondaryPress: () => setSystemAlertVisible(false),
     });
     setSystemAlertVisible(true);
   };
@@ -155,7 +150,10 @@ export default function HomeScreen() {
   const maxMp = 100; // Standard Max Energy
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} className={`flex-1 bg-bg-base theme-${themeKey}`} >
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      className={`flex-1 bg-bg-base theme-${themeKey}`}
+    >
       {/* Level-Up Modals - Only show when log modal is closed */}
       {!logModalVisible && showLevelUp && previousLevel > 0 && newLevel > previousLevel && (
         <LevelUpQueue
@@ -182,15 +180,16 @@ export default function HomeScreen() {
               if (updatedProfile && (updatedProfile.energy || 0) <= 0) {
                 // Trigger Debuff Alert
                 setSystemAlertConfig({
-                  title: "SYSTEM CRITICAL",
-                  message: "Energy depleted. Paradox psychosis imminent. XP gain reduced by 50%. Rest immediately.",
+                  title: 'SYSTEM CRITICAL',
+                  message:
+                    'Energy depleted. Paradox psychosis imminent. XP gain reduced by 50%. Rest immediately.',
                   type: 'error',
-                  primaryLabel: "ACKNOWLEDGE",
+                  primaryLabel: 'ACKNOWLEDGE',
                   onPrimaryPress: () => {
                     // soundService.play('debuff_applied'); // Maybe play on open? User asked "play ... when user has entered... after log modal closed... AND THEN play sound"
                     // It says "show it... and then play the debuff sound".
                     // Playing it immediately when showing the alert seems best.
-                  }
+                  },
                 });
                 setSystemAlertVisible(true);
                 setTimeout(() => {
@@ -212,53 +211,75 @@ export default function HomeScreen() {
         onClose={() => setSystemAlertVisible(false)}
         accentColor={accentColor}
         primaryLabel={systemAlertConfig.primaryLabel}
-        onPrimaryPress={systemAlertConfig.onPrimaryPress ? () => {
-          systemAlertConfig.onPrimaryPress?.();
-          setSystemAlertVisible(false); // Ensure it closes after action if not handled inside
-        } : undefined}
+        onPrimaryPress={
+          systemAlertConfig.onPrimaryPress
+            ? () => {
+                systemAlertConfig.onPrimaryPress?.();
+                setSystemAlertVisible(false); // Ensure it closes after action if not handled inside
+              }
+            : undefined
+        }
         secondaryLabel={systemAlertConfig.secondaryLabel}
-        onSecondaryPress={systemAlertConfig.onSecondaryPress ? () => {
-          systemAlertConfig.onSecondaryPress?.();
-          setSystemAlertVisible(false);
-        } : undefined}
+        onSecondaryPress={
+          systemAlertConfig.onSecondaryPress
+            ? () => {
+                systemAlertConfig.onSecondaryPress?.();
+                setSystemAlertVisible(false);
+              }
+            : undefined
+        }
       />
 
       {/* Background Glow */}
-      <View className="absolute inset-0 opacity-5 bg-accent" />
+      <View className="absolute inset-0 bg-accent opacity-5" />
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 50 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[accentColor]} progressBackgroundColor={"#020617"} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[accentColor]}
+            progressBackgroundColor={'#020617'}
+          />
+        }
       >
         <CornerDecorations color={accentColor} />
 
         {/* Header Status Section */}
-        <View className="items-center mb-8 mt-4 relative">
+        <View className="relative mb-8 mt-4 items-center">
           {/* Status Indicators Top Right */}
-          <View className="absolute -top-4 -right-2 flex-row gap-2">
-            <View className="w-4 h-4 rounded-full bg-accent animate-pulse" />
-            <View className="w-4 h-4 rounded-full bg-accent/50" />
-            <View className="w-4 h-4 rounded-full bg-accent/20" />
+          <View className="absolute -right-2 -top-4 flex-row gap-2">
+            <View className="h-4 w-4 animate-pulse rounded-full bg-accent" />
+            <View className="h-4 w-4 rounded-full bg-accent/50" />
+            <View className="h-4 w-4 rounded-full bg-accent/20" />
           </View>
 
-          <Text className="text-xs font-bold tracking-[0.2em] text-text-dim mb-2 uppercase">Status</Text>
+          <Text className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-text-dim">
+            Status
+          </Text>
 
-          <View className="items-center justify-center mb-2">
-            <Text className="text-6xl font-bold text-accent shadow-lg shadow-accent/50"
-              style={{ textShadowColor: accentColor, textShadowOffset: { width: 1, height: 2 }, textShadowRadius: 12 }}
+          <View className="mb-2 items-center justify-center">
+            <Text
+              className="text-6xl font-bold text-accent shadow-lg shadow-accent/50"
+              style={{
+                textShadowColor: accentColor,
+                textShadowOffset: { width: 1, height: 2 },
+                textShadowRadius: 12,
+              }}
             >
               {profile?.level || 1}
             </Text>
-            <Text className="text-xs tracking-widest text-text-muted uppercase mt-1">Level</Text>
+            <Text className="mt-1 text-xs uppercase tracking-widest text-text-muted">Level</Text>
           </View>
 
-          <View className="items-center gap-1 mt-2">
-            <Text className="text-text-muted font-medium tracking-wide">
+          <View className="mt-2 items-center gap-1">
+            <Text className="font-medium tracking-wide text-text-muted">
               JOB: <Text className="text-text-primary">Founder</Text>
             </Text>
             {/* Use profile.title if available, else standard fallback */}
             {profile?.title && (
-              <Text className="text-text-muted font-medium tracking-wide">
+              <Text className="font-medium tracking-wide text-text-muted">
                 TITLE: <Text className="text-text-primary">{profile?.title}</Text>
               </Text>
             )}
@@ -267,8 +288,8 @@ export default function HomeScreen() {
             </Text> */}
 
             {mp <= 0 && (
-              <View className="bg-red-500/10 px-3 py-1 rounded border border-red-500/50 mt-1">
-                <Text className="text-red-500 text-[10px] font-bold tracking-widest uppercase">
+              <View className="mt-1 rounded border border-red-500/50 bg-red-500/10 px-3 py-1">
+                <Text className="text-[10px] font-bold uppercase tracking-widest text-red-500">
                   DEBUFF ACTIVE: XP -50%
                 </Text>
               </View>
@@ -280,8 +301,8 @@ export default function HomeScreen() {
         {/* Vitals Section */}
         <View className="mb-6 gap-2">
           <StatBar label="MP" value={mp} maxValue={maxMp} colorClass="bg-blue-500" />
-          {(mp < 10 && mp > 0) && (
-            <Text className="text-red-400 text-[10px] font-bold tracking-widest uppercase text-center">
+          {mp < 10 && mp > 0 && (
+            <Text className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400">
               Burnout symptoms detected — rest needed
             </Text>
           )}
@@ -289,17 +310,24 @@ export default function HomeScreen() {
 
         {/* Experience Section */}
         <View className="mb-8 gap-2">
-          <StatBar value={xpProgress} label='Expereince' maxValue={xpToNext} showValueText={true} heightClass="h-2" />
+          <StatBar
+            value={xpProgress}
+            label="Expereince"
+            maxValue={xpToNext}
+            showValueText={true}
+            heightClass="h-2"
+          />
         </View>
 
         {/* Attributes Section */}
-        <View className="border-t-2 border-accent/20 pt-8 relative">
+        <View className="relative border-t-2 border-accent/20 pt-8">
           <View className="absolute -top-3 left-1/2 -ml-24 bg-bg-base px-4">
-            <Text className="text-sm font-bold tracking-widest text-text-dim uppercase">Founder Attributes</Text>
+            <Text className="text-sm font-bold uppercase tracking-widest text-text-dim">
+              Founder Attributes
+            </Text>
           </View>
 
-          <View className="flex-row flex-wrap justify-between mt-4 gap-y-4">
-
+          <View className="mt-4 flex-row flex-wrap justify-between gap-y-4">
             <AttributeStatCard
               label="Engineering (STR)"
               value={profile?.str_builder || 0}
@@ -335,26 +363,32 @@ export default function HomeScreen() {
             />
 
             {/* 6. Streak (Special Style) */}
-            <View className="w-[48%] bg-gray-900 border border-orange-500/30 rounded-xl p-4 justify-between relative overflow-hidden">
-              <View className="absolute right-0 top-0 p-4" style={profile?.current_streak && profile.current_streak > 0 ? { opacity: 1 } : { opacity: 0.1 }}>
+            <View className="relative w-[48%] justify-between overflow-hidden rounded-xl border border-orange-500/30 bg-gray-900 p-4">
+              <View
+                className="absolute right-0 top-0 p-4"
+                style={
+                  profile?.current_streak && profile.current_streak > 0
+                    ? { opacity: 1 }
+                    : { opacity: 0.1 }
+                }
+              >
                 {/* Background Decoration */}
                 <Text className="text-4xl ">🔥</Text>
               </View>
 
               <View className="relative mb-2">
-                <View className="absolute -left-5 top-1 w-1.5 h-1.5 rounded-full bg-orange-500" />
-                <Text className="text-[10px] font-bold tracking-widest text-orange-400 uppercase">
+                <View className="absolute -left-5 top-1 h-1.5 w-1.5 rounded-full bg-orange-500" />
+                <Text className="text-[10px] font-bold uppercase tracking-widest text-orange-400">
                   Streak
                 </Text>
               </View>
               <View className="flex-row items-end">
-                <Text className="text-2xl font-black text-white tracking-wider mr-1">
+                <Text className="mr-1 text-2xl font-black tracking-wider text-white">
                   {profile?.current_streak || 0}
                 </Text>
-                <Text className="text-xs text-gray-500 font-bold mb-1.5">DAYS</Text>
+                <Text className="mb-1.5 text-xs font-bold text-gray-500">DAYS</Text>
               </View>
             </View>
-
           </View>
         </View>
       </ScrollView>
@@ -368,15 +402,14 @@ export default function HomeScreen() {
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: 0.8,
             shadowRadius: 10,
-            elevation: 10
+            elevation: 10,
           }}
-          className="w-14 h-14 bg-gray-900 border border-gray-700 items-center justify-center overflow-hidden"
+          className="h-14 w-14 items-center justify-center overflow-hidden border border-gray-700 bg-gray-900"
         >
           <CornerDecorations size="sm" color={accentColor} />
           <IconSymbol name="plus" size={24} color={accentColor} />
         </TouchableOpacity>
       </View>
-
     </SafeAreaView>
   );
 }
