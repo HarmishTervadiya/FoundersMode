@@ -286,7 +286,7 @@ export default function VaultKeyScreen() {
             </Text>
             <Text className="text-center text-lg tracking-wide text-text-muted">
               {step === 'CHOICE'
-                ? "Did you bank your XP in the Founder's Vault?"
+                ? "Did you bank your XP in the Founders Vault?"
                 : step === 'LEGACY_INPUT'
                   ? 'Enter your existing vault key.'
                   : 'Create a vault key or proceed with identity.'}

@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signInWithKey: async (secretKey: string) => {
     const formattedKey = secretKey.trim().toUpperCase();
-    const dummyEmail = `${formattedKey}@foundersrpg.com`;
+    const dummyEmail = `${formattedKey}@foundersmode.com`;
 
     // FIX: Added 'return' so the UI receives the result { data, error }
     return await runAsync(set, async () => {

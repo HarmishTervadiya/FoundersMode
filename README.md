@@ -1,4 +1,4 @@
-# ⚔️ Founder's RPG
+# ⚡ FoundersMode
 
 > **Turn the Grind into a Game.** > _Validate the struggle. Gamify the rest. Visualize the progress._
 
@@ -12,7 +12,7 @@
 
 Founders especially solo devs suffer from **"Invisible Progress Burnout."** You work 12 hours fixing bugs and tweaking UI, but if revenue doesn't go up, your brain registers the day as a failure ("Zero Day").
 
-**Founder's RPG** is the painkiller.
+**FoundersMode** is the painkiller.
 
 - **Input:** Dump your raw, messy daily log.
 - **Process:** AI acts as the "Dungeon Master," validating effort.
@@ -88,7 +88,7 @@ _Strict Rule: Never monetize Core Progression (No Pay-to-Win)._
 
 ```bash
 # Clone the repository
-git clone [https://github.com/your-username/founders-rpg.git](https://github.com/your-username/founders-rpg.git)
+git clone https://github.com/HarmishTervadiya/FoundersMode.git
 
 # Install dependencies
 npm install

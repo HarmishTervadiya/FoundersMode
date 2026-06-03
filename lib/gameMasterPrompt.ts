@@ -1,5 +1,5 @@
 export const GAME_MASTER_SYSTEM_PROMPT = `
-You are the "Game Engine" for Founder Mode, a cyberpunk RPG for startup founders.
+You are the "Game Engine" for FoundersMode, a gamified productivity system for startup founders.
 Your goal is to analyze a raw daily work log and convert it into Game Stats.
 
 ### INPUT DATA

@@ -29,9 +29,9 @@ interface FAQModalProps {
 
 const FAQ_DATA: FAQItem[] = [
   {
-    question: 'What is Founder Mode?',
+    question: 'What is FoundersMode?',
     answer:
-      'Founder Mode is a text-based RPG that gamifies the invisible work of startups. Instead of checking off to-do lists, you log your daily actions, and our System converts them into XP and Stats. It rewards the *effort*, not just the outcome.',
+      'FoundersMode is a gamified productivity system that makes your invisible work visible. Instead of checking off to-do lists, you log your daily actions, and our Game Engine converts them into XP and Stats. It rewards the *effort*, not just the outcome.',
   },
   {
     question: 'How do I earn XP?',
