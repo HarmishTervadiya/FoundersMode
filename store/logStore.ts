@@ -56,6 +56,9 @@ export const useLogStore = create<LogState>((set, get) => ({
   },
 
   addLog: async (userId: string, content: string) => {
+    if (get().isLoading) {
+      throw new Error('A log is already being processed. Please wait.');
+    }
     set({ isLoading: true, error: null });
     try {
       const { logs } = get();
@@ -136,19 +139,25 @@ export const useLogStore = create<LogState>((set, get) => ({
         finalFP = remainingFP;
 
         // Scale XP & Breakdown proportionally
-        finalXp = Math.floor(finalXp * ratio);
-        (Object.keys(finalBreakdown) as Array<keyof typeof finalBreakdown>).forEach((key) => {
-          finalBreakdown[key] = Math.floor((finalBreakdown[key] || 0) * ratio);
-        });
+        finalXp = remainingFP; // Must perfectly match FP limit
+        let newSum = 0;
+        const keys = Object.keys(finalBreakdown) as Array<keyof typeof finalBreakdown>;
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          const newVal = Math.floor((finalBreakdown[key] || 0) * ratio);
+          finalBreakdown[key] = newVal;
+          newSum += newVal;
+        }
+        // Sweep remainder into the last key to ensure perfect parity
+        if (keys.length > 0) {
+          finalBreakdown[keys[keys.length - 1]] = Math.max(0, finalXp - newSum);
+        }
       }
 
-      // MP Cost Logic
-      let mpCost = 0;
-      if (analysis.total_fp > 79) {
-        mpCost = 15;
-      } else if (analysis.total_fp > 65) {
-        mpCost = 5;
-      }
+      // MP Cost Logic: Proportional to FP earned.
+      // 100 FP drains a maximum of 25 MP per day.
+      // We add a floor of 1 MP if they earned any FP, so no log is "free".
+      let mpCost = finalFP > 0 ? Math.max(1, Math.ceil(finalFP * 0.25)) : 0;
 
       // 4. Atomic-ish DB Updates
       // Step A: Determine if Insert or Update
@@ -190,8 +199,12 @@ export const useLogStore = create<LogState>((set, get) => ({
             total_fp_awarded: newTotalFP,
             total_xp_awarded: newTotalXP,
             xp_breakdown: mergedBreakdown,
-            analysis_report: analysis.analysis_short,
-            strategic_insight: analysis.insight,
+            analysis_report: existingDailyLog.analysis_report
+              ? `${existingDailyLog.analysis_report}\n\n---\n\n${analysis.analysis_short}`
+              : analysis.analysis_short,
+            strategic_insight: existingDailyLog.strategic_insight
+              ? `${existingDailyLog.strategic_insight}\n\n---\n\n${analysis.insight}`
+              : analysis.insight,
             debuff_applied: isDebuffed || existingDailyLog.debuff_applied,
           })
           .eq('id', existingDailyLog.id)
@@ -222,8 +235,12 @@ export const useLogStore = create<LogState>((set, get) => ({
               difficulty_tier: analysis.difficulty_tier,
               total_fp_awarded: newTotalFP,
               total_xp_awarded: newTotalXP,
-              analysis_report: analysis.analysis_short,
-              strategic_insight: analysis.insight,
+              analysis_report: existingDailyLog.analysis_report
+                ? `${existingDailyLog.analysis_report}\n\n---\n\n${analysis.analysis_short}`
+                : analysis.analysis_short,
+              strategic_insight: existingDailyLog.strategic_insight
+                ? `${existingDailyLog.strategic_insight}\n\n---\n\n${analysis.insight}`
+                : analysis.insight,
               xp_breakdown: mergedBreakdown,
               // Note: We don't preserve original created_at here easily without more logic,
               // but a new created_at is fine for a "restore".

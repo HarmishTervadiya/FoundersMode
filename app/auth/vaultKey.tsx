@@ -11,7 +11,9 @@ import { AlertCircle, Key, User } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -64,7 +66,7 @@ export default function VaultKeyScreen() {
   const [customKey, setCustomKey] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [showUsernameModal, setShowUsernameModal] = useState(true); // Default to true to force Identity Creation
   const [usernameError, setUsernameError] = useState('');
   const [keyError, setKeyError] = useState('');
 
@@ -262,38 +264,46 @@ export default function VaultKeyScreen() {
 
   return (
     <SafeAreaView className={`relative flex-1 bg-bg-base theme-${themeKey}`}>
-      {/* ScrollView to handle keyboard interactions smoothly */}
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 32 }}>
-        <View className="pb-4 pt-4">
-          <Text className="mb-6 text-left text-xs font-bold tracking-[4px] text-text-primary">
-            ◢ SECURE FACILITY // LEGACY MIGRATION ◣
-          </Text>
-        </View>
-
-        <View className="flex-1 justify-center">
-          {/* Header Icon & Text */}
-          <View className="mb-12 items-center">
-            <View className="relative mb-6 h-20 w-20 items-center justify-center border-2 border-accent/30 bg-accent/10">
-              <CornerDecorations size="sm" color={iconColor} />
-              <Key size={40} color={iconColor} strokeWidth={2} />
-            </View>
-            <Text className="mb-3 text-center text-3xl font-bold tracking-wider text-text-primary">
-              {step === 'CHOICE'
-                ? 'WELCOME BACK?'
-                : step === 'LEGACY_INPUT'
-                  ? 'LEGACY ACCESS'
-                  : 'NEW PROTOCOL'}
-            </Text>
-            <Text className="text-center text-lg tracking-wide text-text-muted">
-              {step === 'CHOICE'
-                ? "Did you bank your XP in the Founders Vault?"
-                : step === 'LEGACY_INPUT'
-                  ? 'Enter your existing vault key.'
-                  : 'Create a vault key or proceed with identity.'}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        {/* ScrollView to handle keyboard interactions smoothly */}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, padding: 32 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="pb-4 pt-4">
+            <Text className="mb-6 text-left text-xs font-bold tracking-[4px] text-text-primary">
+              ◢ SECURE FACILITY // LEGACY MIGRATION ◣
             </Text>
           </View>
 
-          {/* STEP: CHOICE */}
+          <View className="flex-1 justify-center">
+            {/* Header Icon & Text */}
+            <View className="mb-12 items-center">
+              <View className="relative mb-6 h-20 w-20 items-center justify-center border-2 border-accent/30 bg-accent/10">
+                <CornerDecorations size="sm" color={iconColor} />
+                <Key size={40} color={iconColor} strokeWidth={2} />
+              </View>
+              <Text className="mb-3 text-center text-3xl font-bold tracking-wider text-text-primary">
+                {step === 'CHOICE'
+                  ? 'WELCOME BACK?'
+                  : step === 'LEGACY_INPUT'
+                    ? 'LEGACY ACCESS'
+                    : 'NEW PROTOCOL'}
+              </Text>
+              <Text className="text-center text-lg tracking-wide text-text-muted">
+                {step === 'CHOICE'
+                  ? 'Did you bank your XP in the Founders Vault?'
+                  : step === 'LEGACY_INPUT'
+                    ? 'Enter your existing vault key.'
+                    : 'Create a vault key or proceed with identity.'}
+              </Text>
+            </View>
+
+            {/* STEP: CHOICE */}
+            {/* LEGACY KEY OPTIONS HIDDEN PER REQUEST (Skip to Identity Creation)
           {step === 'CHOICE' && (
             <View className="gap-y-3">
               <TouchableOpacity
@@ -320,7 +330,6 @@ export default function VaultKeyScreen() {
             </View>
           )}
 
-          {/* STEP: LEGACY INPUT */}
           {step === 'LEGACY_INPUT' && (
             <View className="gap-y-6">
               <View>
@@ -340,7 +349,6 @@ export default function VaultKeyScreen() {
                   className="w-full border-2 border-accent/30 bg-bg-card/50 py-5 text-center font-mono text-2xl tracking-wider text-text-primary"
                   maxLength={10}
                 />
-                {/* Error Display */}
                 {keyError ? (
                   <View className="mt-3 flex-row items-center justify-center gap-2">
                     <AlertCircle size={16} color="#f87171" />
@@ -367,8 +375,10 @@ export default function VaultKeyScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </View>
-      </ScrollView>
+          */}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* USERNAME MODAL */}
       <Modal

@@ -54,25 +54,21 @@ export default function HomeScreen() {
   // Track previous profile level to detect changes
   const lastProfileLevel = useRef<number>(profile?.level || 1);
 
-  // Initial Data Fetch
+  // Initial Data Fetch — only fetch profile if not already loaded.
+  // AuthGate already fetches on boot; this avoids the triple-fetch chain.
   useEffect(() => {
     fetchAllLevels();
-    if (profile?.id) {
-      fetchProfile(profile.id).then(async () => {
-        // Check if a welcome back message is pending from AuthGate checks
-        const pending = useUserStore.getState().welcomeMessagePending;
 
-        if (pending) {
-          setSystemAlertConfig({
-            title: 'System Online',
-            message: `Welcome back, Player\nAll systems are ready. Energy reserves have been partially restored.`,
-            type: 'success',
-          });
-          setSystemAlertVisible(true);
-          // Clear the pending state
-          useUserStore.getState().setWelcomeMessagePending(false);
-        }
+    // Check for welcome back message regardless (set by AuthGate before navigation)
+    const pending = useUserStore.getState().welcomeMessagePending;
+    if (pending) {
+      setSystemAlertConfig({
+        title: 'System Online',
+        message: `Welcome back, Player\nAll systems are ready. Energy reserves have been partially restored.`,
+        type: 'success',
       });
+      setSystemAlertVisible(true);
+      useUserStore.getState().setWelcomeMessagePending(false);
     }
   }, []);
 
@@ -220,6 +216,7 @@ export default function HomeScreen() {
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24, paddingBottom: 50 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

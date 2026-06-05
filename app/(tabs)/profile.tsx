@@ -15,13 +15,15 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 export default function ProfileScreen() {
   const { key: themeKey } = useTheme();
   const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
 
   const { profile, toggleDailyReminder } = useUserStore();
-  const { signOut } = useAuthStore();
+  const { user, signOut } = useAuthStore();
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const { soundEnabled, toggleSound } = useSettingsStore();
 
   const [usernameModalVisible, setUsernameModalVisible] = useState(false);
@@ -100,6 +102,7 @@ export default function ProfileScreen() {
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -118,9 +121,17 @@ export default function ProfileScreen() {
             className="relative mb-4 rounded-full border-2 border-dashed p-1"
             style={{ borderColor: accentColor }}
           >
-            {/* Fallback to generic user icon from Ionicons if no image - but usually we want a placeholder image for "design" */}
             <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gray-800">
-              <Ionicons name="person" size={48} color="#4b5563" />
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <Ionicons name="person" size={48} color="#4b5563" />
+              )}
             </View>
             <View className="absolute bottom-0 right-0 rounded-full border border-gray-800 bg-gray-900 p-1">
               <View className="h-4 w-4 rounded-full border-2 border-gray-900 bg-green-500" />

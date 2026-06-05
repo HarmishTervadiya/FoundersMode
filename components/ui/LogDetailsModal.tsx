@@ -58,7 +58,7 @@ export const LogDetailsModal: React.FC<LogDetailsModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="p-5">
+          <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
             {/* Main Content */}
             <TextRenderer className="mb-6 text-base font-medium leading-6 text-gray-300">
               {log.content ?? ''}

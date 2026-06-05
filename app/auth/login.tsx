@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import * as WebBrowser from 'expo-web-browser';
 import { Chrome, Zap } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Ensure WebBrowser can close properly (standard boilerplate)
 WebBrowser.maybeCompleteAuthSession();
@@ -99,6 +99,27 @@ export default function LoginScreen() {
             </View>
           )}
         </TouchableOpacity>
+
+        {/* Consent Text */}
+        <View className="mt-6 items-center px-4">
+          <Text className="text-center font-mono text-xs text-text-dim/50">
+            {'By continuing, you agree to our '}
+            <Text
+              className="font-mono text-xs text-text-primary"
+              onPress={() => Linking.openURL('https://foundersmode.harmistervadiya.dev/privacy')}
+            >
+              Privacy Policy
+            </Text>
+            {' and '}
+            <Text
+              className="font-mono text-xs text-text-primary"
+              onPress={() => Linking.openURL('https://foundersmode.harmistervadiya.dev/terms')}
+            >
+              Terms of Service
+            </Text>
+            {'.'}
+          </Text>
+        </View>
 
         {/* Footer */}
         <View className="mt-12 items-center">

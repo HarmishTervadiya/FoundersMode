@@ -2,13 +2,12 @@
  * Onboarding Screen
  *
  * 3-step onboarding flow with themed UI, animations, and store integration.
- * Uses SafeAreaView from react-native-safe-area-context (not deprecated RN version).
  */
 
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Pressable, Text, View } from 'react-native';
+import { Dimensions, Linking, Pressable, Text, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -291,9 +290,34 @@ export default function OnboardingScreen() {
               </Pressable>
             </>
           ) : (
-            <ThemedButton onPress={handleNext} variant="primary">
-              [[ Initialize Vault ]]
-            </ThemedButton>
+            <>
+              <View className="items-center px-4 pb-2">
+                <Text className="text-center font-mono text-xs text-text-dim/50">
+                  {'By continuing, you agree to our '}
+                  <Text
+                    className="font-mono text-xs text-text-primary"
+                    onPress={() =>
+                      Linking.openURL('https://foundersmode.harmistervadiya.dev/privacy')
+                    }
+                  >
+                    Privacy Policy
+                  </Text>
+                  {' and '}
+                  <Text
+                    className="font-mono text-xs text-text-primary"
+                    onPress={() =>
+                      Linking.openURL('https://foundersmode.harmistervadiya.dev/terms')
+                    }
+                  >
+                    Terms of Service
+                  </Text>
+                  {'.'}
+                </Text>
+              </View>
+              <ThemedButton onPress={handleNext} variant="primary">
+                [[ Initialize Vault ]]
+              </ThemedButton>
+            </>
           )}
         </View>
       </SafeAreaView>

@@ -28,7 +28,7 @@ Founders especially solo devs suffer from **"Invisible Progress Burnout."** You 
 
 ### 🛡️ Phase 1: The XP Bank (The Vault)
 
-Completed Objective: Generate FOMO & Sunk Cost Fallacy_
+Completed Objective: Generate FOMO & Sunk Cost Fallacy
 
 A high-vibe "Vault" where users deposit daily work to be claimed later.
 
@@ -66,7 +66,6 @@ The core feedback loop.
 - **Frontend:** React Native Expo (Nativewind CSS).
 - **Backend:** Supabase.
 - **AI:** Gemini API (`2.5-flash-lite` for speed/cost efficiency).
-
 
 ### AI System Prompt Concept
 

@@ -50,3 +50,16 @@ google-services.json
 
 # Logo concepts
 /logo_concepts/
+
+# Ignore all auto-generated/unused app icons
+/assets/app-icons/**/*
+!/assets/app-icons/
+!/assets/app-icons/ios/
+!/assets/app-icons/ios/AppIcon~ios-marketing.png
+!/assets/app-icons/android/
+!/assets/app-icons/android/mipmap-xxxhdpi/
+!/assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png
+!/assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_background.png
+!/assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_monochrome.png
+!/assets/app-icons/play_store_512.png
+!/assets/app-icons/notification-icon.png

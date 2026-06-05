@@ -42,9 +42,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.log('[AuthStore] getSession result:', session ? 'Session found' : 'No session');
 
       if (session?.user) {
-        // Wait for profile data to load before clearing loading state
-        const { useUserStore } = await import('./userStore');
-        await useUserStore.getState().fetchProfile(session.user.id);
+        // Profile fetch intentionally removed here — AuthGate in _layout.tsx
+        // handles fetching after navigation is ready, preventing the double-fetch chain.
       }
 
       console.log('[AuthStore] Session user:', session?.user?.id);

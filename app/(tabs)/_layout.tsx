@@ -13,6 +13,9 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Solid scene background eliminates white flash during any tab switch.
+        // bg-bg-base = #151718 across all themes.
+        sceneStyle: { backgroundColor: themeColors.background },
         // 1. The HUD Container
         tabBarStyle: {
           backgroundColor: themeColors.navBar,

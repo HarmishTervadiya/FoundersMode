@@ -37,25 +37,44 @@ function NetworkGate({ children }: { children: React.ReactNode }) {
   const accentColor = (Colors as any)[themeKey]?.accent || Colors.emerald.accent;
   const backgroundColor = (Colors as any)[themeKey]?.background || Colors.emerald.background;
 
+  const checkNetwork = async () => {
+    try {
+      const state = await Network.getNetworkStateAsync();
+      setIsConnected(state.isConnected ?? false);
+    } catch (e) {
+      console.error('Network check failed', e);
+      setIsConnected(true); // Fail open
+    }
+  };
+
   useEffect(() => {
-    const checkNetwork = async () => {
-      try {
-        const state = await Network.getNetworkStateAsync();
-        setIsConnected(state.isConnected ?? false);
-      } catch (e) {
-        // Fail open if check fails, but log it
-        console.error('Network check failed', e);
-        setIsConnected(true);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      checkNetwork();
+      interval = setInterval(checkNetwork, 10000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
       }
     };
 
-    checkNetwork(); // Initial check
+    startPolling();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    });
 
-    // Poll periodically or rely on User refresh/action?
-    // A simple interval is robust enough for now without complex NetInfo subscriptions
-    const interval = setInterval(checkNetwork, 5000);
-
-    return () => clearInterval(interval);
+    return () => {
+      stopPolling();
+      subscription.remove();
+    };
   }, []);
 
   if (!isConnected) {
@@ -296,11 +315,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     runAuthChecks();
 
-    // AppState Listener for Resume
+    // AppState Listener for Resume — lightweight session refresh only.
+    // Full profile re-fetch and inactivity checks only run on initial load (above).
+    // On resume, just re-run the routing logic if the session changes.
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        console.log('App resumed - running auth checks...');
-        runAuthChecks();
+        console.log('App resumed - checking network connectivity...');
+        // The NetworkGate handles connectivity. AuthGate only needs to
+        // re-evaluate routing if the session expired while backgrounded.
+        // Supabase auto-refreshes the token, so we just need to check segment routing.
+        const inAuthGroup = segments[0] === 'auth';
+        if (!session && !inAuthGroup) {
+          router.replace('/auth/login');
+        }
       }
     });
 
@@ -334,9 +361,17 @@ export default function RootLayout() {
 
   usePushNotifications();
 
+  const CustomTheme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: '#050505',
+    },
+  };
+
   return (
     <GestureHandlerRootView className={`flex-1 theme-${themeKey}`}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={CustomTheme}>
         <NetworkGate>
           <VersionGate>
             <AuthGate>

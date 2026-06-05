@@ -3,7 +3,16 @@ import { useUserStore } from '@/store/userStore';
 import { soundService } from '@/utils/soundService';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { CornerDecorations } from '../ui/CornerDecorations';
 
 interface UsernameChangeModalProps {
@@ -90,82 +99,87 @@ export const UsernameChangeModal: React.FC<UsernameChangeModalProps> = ({
 
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-      <View className="flex-1 items-center justify-center bg-black/80 px-4">
-        <TouchableOpacity
-          style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
-          onPress={onClose}
-        />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View className="flex-1 items-center justify-center bg-black/80 px-4">
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+            onPress={onClose}
+          />
 
-        <View className="relative w-full overflow-hidden border border-gray-800 bg-gray-900 p-6">
-          <CornerDecorations size="md" color={accentColor} />
+          <View className="relative w-full overflow-hidden border border-gray-800 bg-gray-900 p-6">
+            <CornerDecorations size="md" color={accentColor} />
 
-          <Text className="mb-1 text-xl font-bold tracking-wider text-white">
-            IDENTITY PROTOCOL
-          </Text>
-          <Text className="mb-6 text-xs uppercase tracking-widest text-gray-500">
-            Update System Alias
-          </Text>
+            <Text className="mb-1 text-xl font-bold tracking-wider text-white">
+              IDENTITY PROTOCOL
+            </Text>
+            <Text className="mb-6 text-xs uppercase tracking-widest text-gray-500">
+              Update System Alias
+            </Text>
 
-          {daysRemaining > 0 && !systemAlertVisible ? (
-            <View className="mb-6 items-center rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-              <Ionicons name="lock-closed" size={24} color="#ef4444" className="mb-2" />
-              <Text className="text-center font-bold text-red-400">PROTOCOL LOCKED</Text>
-              <Text className="mt-1 text-center text-xs text-gray-400">
-                Next modification available in {daysRemaining} days.
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View className="mb-4">
-                <Text className="mb-2 ml-1 text-xs text-gray-400">NEW ALIAS</Text>
-                <TextInput
-                  value={newUsername}
-                  onChangeText={(text) => {
-                    setNewUsername(text);
-                    setError(null);
-                  }}
-                  placeholder="Enter Player Name"
-                  placeholderTextColor="#4b5563"
-                  className="rounded-lg border border-gray-700 bg-gray-800 p-4 font-medium text-white"
-                  autoCapitalize="none"
-                />
+            {daysRemaining > 0 && !systemAlertVisible ? (
+              <View className="mb-6 items-center rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+                <Ionicons name="lock-closed" size={24} color="#ef4444" className="mb-2" />
+                <Text className="text-center font-bold text-red-400">PROTOCOL LOCKED</Text>
+                <Text className="mt-1 text-center text-xs text-gray-400">
+                  Next modification available in {daysRemaining} days.
+                </Text>
               </View>
+            ) : (
+              <>
+                <View className="mb-4">
+                  <Text className="mb-2 ml-1 text-xs text-gray-400">NEW ALIAS</Text>
+                  <TextInput
+                    value={newUsername}
+                    onChangeText={(text) => {
+                      setNewUsername(text);
+                      setError(null);
+                    }}
+                    placeholder="Enter Player Name"
+                    placeholderTextColor="#4b5563"
+                    className="rounded-lg border border-gray-700 bg-gray-800 p-4 font-medium text-white"
+                    autoCapitalize="none"
+                  />
+                </View>
 
-              {error && <Text className="mb-4 ml-1 text-xs text-red-400">{error}</Text>}
-            </>
-          )}
-
-          <View className="mt-2 flex-row justify-end gap-3 space-x-3">
-            <TouchableOpacity onPress={onClose} className="rounded-lg bg-gray-800 px-4 py-3">
-              <Text className="font-bold text-gray-400">CANCEL</Text>
-            </TouchableOpacity>
-
-            {!daysRemaining && (
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={isChecking}
-                className="rounded-lg px-6 py-3"
-                style={{ backgroundColor: accentColor }}
-              >
-                {isChecking ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text className="font-bold text-white">UPDATE</Text>
-                )}
-              </TouchableOpacity>
+                {error && <Text className="mb-4 ml-1 text-xs text-red-400">{error}</Text>}
+              </>
             )}
-          </View>
-        </View>
 
-        <SystemAlert
-          visible={systemAlertVisible}
-          onClose={() => {}}
-          title="IDENTITY UPDATED"
-          message={`Your system alias has been changed to ${newUsername}.`}
-          type="success"
-          accentColor={accentColor}
-        />
-      </View>
+            <View className="mt-2 flex-row justify-end gap-3 space-x-3">
+              <TouchableOpacity onPress={onClose} className="rounded-lg bg-gray-800 px-4 py-3">
+                <Text className="font-bold text-gray-400">CANCEL</Text>
+              </TouchableOpacity>
+
+              {!daysRemaining && (
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={isChecking}
+                  className="rounded-lg px-6 py-3"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {isChecking ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text className="font-bold text-white">UPDATE</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <SystemAlert
+            visible={systemAlertVisible}
+            onClose={() => {}}
+            title="IDENTITY UPDATED"
+            message={`Your system alias has been changed to ${newUsername}.`}
+            type="success"
+            accentColor={accentColor}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

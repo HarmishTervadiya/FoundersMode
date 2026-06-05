@@ -24,13 +24,15 @@ export default function HistoryScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch logs when screen comes into focus
+  // Fetch logs only when screen focuses AND we have no cached data yet.
+  // This avoids the spinner flash on every tab switch while pull-to-refresh
+  // still allows manual data refresh.
   useFocusEffect(
     useCallback(() => {
-      if (profile?.id) {
+      if (profile?.id && logs.length === 0) {
         fetchLogs(profile.id);
       }
-    }, [profile?.id])
+    }, [profile?.id, logs.length])
   );
 
   const handleLogPress = (log: Log) => {
@@ -97,6 +99,8 @@ export default function HistoryScreen() {
             )}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
+            maxItemsInRecyclePool={15}
+            pagingEnabled
             contentContainerStyle={{ paddingBottom: 100 }}
             // onRefresh={onRefresh}
             refreshControl={
