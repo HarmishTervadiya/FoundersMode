@@ -14,12 +14,12 @@
  * const iconColor = Colors[themeKey]?.text || Colors.emerald.text;
  */
 
-import { Colors } from "./theme";
-import { CURRENT_THEME, type ThemeKey } from "./theme.config";
+import { Colors } from './theme';
+import { CURRENT_THEME, type ThemeKey } from './theme.config';
 
 // Helper function for joining classnames
 export function cx(...parts: (string | boolean | undefined | null)[]): string {
-  return parts.filter(Boolean).join(" ");
+  return parts.filter(Boolean).join(' ');
 }
 
 // Get colors for the current theme (for StyleSheet usage)
@@ -28,7 +28,7 @@ export const colors = {
     return (Colors as any)[CURRENT_THEME]?.text || Colors.emerald.text;
   },
   get bg() {
-    return "#151718";
+    return '#151718';
   }, // slate-950
 };
 

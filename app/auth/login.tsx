@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import * as WebBrowser from 'expo-web-browser';
 import { Chrome, Zap } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Ensure WebBrowser can close properly (standard boilerplate)
 WebBrowser.maybeCompleteAuthSession();
@@ -49,7 +49,7 @@ export default function LoginScreen() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        console.error("Google Sign-In Error:", error);
+        console.error('Google Sign-In Error:', error);
       }
     } catch (e) {
       console.error('Login exception', e);
@@ -61,21 +61,21 @@ export default function LoginScreen() {
   const isLoading = isAuthLoading || localLoading;
 
   return (
-    <SafeAreaView className={`flex-1 relative bg-bg-base theme-${themeKey}`}>
+    <SafeAreaView className={`relative flex-1 bg-bg-base theme-${themeKey}`}>
       {/* Background Glow */}
-      <View className="absolute inset-0 opacity-5 bg-accent" />
+      <View className="absolute inset-0 bg-accent opacity-5" />
 
-      <View className="flex-1 p-8 justify-center">
+      <View className="flex-1 justify-center p-8">
         {/* Header */}
-        <View className="items-center mb-16">
-          <View className="w-24 h-24 border-2 border-accent/30 bg-accent/10 items-center justify-center mb-8 relative">
-            <CornerDecorations size='sm' color={iconColor} />
+        <View className="mb-16 items-center">
+          <View className="relative mb-8 h-24 w-24 items-center justify-center border-2 border-accent/30 bg-accent/10">
+            <CornerDecorations size="sm" color={iconColor} />
             <Zap size={48} color={iconColor} />
           </View>
-          <Text className="text-3xl font-bold tracking-wider mb-3 text-text-primary">
+          <Text className="mb-3 text-3xl font-bold tracking-wider text-text-primary">
             [ FOUNDERS MODE ]
           </Text>
-          <Text className="text-sm tracking-widest font-bold opacity-60 text-text-primary">
+          <Text className="text-sm font-bold tracking-widest text-text-primary opacity-60">
             SECURE AUTHENTICATION REQUIRED
           </Text>
         </View>
@@ -85,24 +85,45 @@ export default function LoginScreen() {
           onPress={handleGoogleSignIn}
           disabled={isLoading}
           activeOpacity={0.8}
-          className={`w-full py-5 items-center justify-center border-2 relative bg-accent/20 border-accent/50 ${isLoading ? 'opacity-50' : ''}`}
+          className={`relative w-full items-center justify-center border-2 border-accent/50 bg-accent/20 py-5 ${isLoading ? 'opacity-50' : ''}`}
         >
-          <CornerDecorations size='md' color={iconColor} />
+          <CornerDecorations size="md" color={iconColor} />
           {isLoading ? (
             <ActivityIndicator color={iconColor} />
           ) : (
             <View className="flex-row items-center gap-3">
               <Chrome size={24} color={iconColor} />
-              <Text className="font-bold tracking-wider uppercase text-text-primary">
+              <Text className="font-bold uppercase tracking-wider text-text-primary">
                 Sign in with Google
               </Text>
             </View>
           )}
         </TouchableOpacity>
 
+        {/* Consent Text */}
+        <View className="mt-6 items-center px-4">
+          <Text className="text-center font-mono text-xs text-text-dim/50">
+            {'By continuing, you agree to our '}
+            <Text
+              className="font-mono text-xs text-text-primary"
+              onPress={() => Linking.openURL('https://foundersmode.harmistervadiya.dev/privacy')}
+            >
+              Privacy Policy
+            </Text>
+            {' and '}
+            <Text
+              className="font-mono text-xs text-text-primary"
+              onPress={() => Linking.openURL('https://foundersmode.harmistervadiya.dev/terms')}
+            >
+              Terms of Service
+            </Text>
+            {'.'}
+          </Text>
+        </View>
+
         {/* Footer */}
-        <View className="items-center mt-12">
-          <Text className="text-xs tracking-widest opacity-40 text-text-primary">
+        <View className="mt-12 items-center">
+          <Text className="text-xs tracking-widest text-text-primary opacity-40">
             SECURE • ENCRYPTED • FOUNDER-APPROVED
           </Text>
         </View>

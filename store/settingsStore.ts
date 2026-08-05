@@ -1,8 +1,8 @@
-import { soundService } from "@/utils/soundService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { create } from "zustand";
+import { soundService } from '@/utils/soundService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
 
-const SOUND_ENABLED_KEY = "founders_sound_enabled";
+const SOUND_ENABLED_KEY = 'founders_sound_enabled';
 
 interface SettingsState {
   soundEnabled: boolean;
@@ -17,12 +17,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try {
       const stored = await AsyncStorage.getItem(SOUND_ENABLED_KEY);
       // Default to true if null (not set yet)
-      const isEnabled = stored !== null ? stored === "true" : true;
+      const isEnabled = stored !== null ? stored === 'true' : true;
 
       set({ soundEnabled: isEnabled });
       soundService.setEnabled(isEnabled);
     } catch (e) {
-      console.warn("Failed to load settings", e);
+      console.warn('Failed to load settings', e);
       // Fallback to default
       set({ soundEnabled: true });
       soundService.setEnabled(true);
@@ -35,7 +35,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try {
       await AsyncStorage.setItem(SOUND_ENABLED_KEY, String(value));
     } catch (e) {
-      console.warn("Failed to save sound setting", e);
+      console.warn('Failed to save sound setting', e);
     }
   },
 }));

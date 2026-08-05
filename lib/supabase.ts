@@ -1,7 +1,7 @@
 // import 'react-native-url-polyfill/auto';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createClient } from "@supabase/supabase-js";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
 
 // 1. Custom Storage Adapter for Web vs Mobile
 const ExpoSecureAdapter = {
@@ -20,7 +20,7 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 if (!url || !key) {
-  throw new Error("Missing Supabase URL or Anon Key");
+  throw new Error('Missing Supabase URL or Anon Key');
 }
 
 // 2. Initialize Client with Auth Persistence

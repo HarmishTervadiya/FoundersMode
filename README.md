@@ -1,4 +1,4 @@
-# ⚔️ Founder's RPG
+# ⚡ FoundersMode
 
 > **Turn the Grind into a Game.** > _Validate the struggle. Gamify the rest. Visualize the progress._
 
@@ -12,7 +12,7 @@
 
 Founders especially solo devs suffer from **"Invisible Progress Burnout."** You work 12 hours fixing bugs and tweaking UI, but if revenue doesn't go up, your brain registers the day as a failure ("Zero Day").
 
-**Founder's RPG** is the painkiller.
+**FoundersMode** is the painkiller.
 
 - **Input:** Dump your raw, messy daily log.
 - **Process:** AI acts as the "Dungeon Master," validating effort.
@@ -28,7 +28,7 @@ Founders especially solo devs suffer from **"Invisible Progress Burnout."** You 
 
 ### 🛡️ Phase 1: The XP Bank (The Vault)
 
-Completed Objective: Generate FOMO & Sunk Cost Fallacy_
+Completed Objective: Generate FOMO & Sunk Cost Fallacy
 
 A high-vibe "Vault" where users deposit daily work to be claimed later.
 
@@ -67,7 +67,6 @@ The core feedback loop.
 - **Backend:** Supabase.
 - **AI:** Gemini API (`2.5-flash-lite` for speed/cost efficiency).
 
-
 ### AI System Prompt Concept
 
 > "You are a RPG Game Master. Analyze this journal entry. Identify tasks. Assign Focus Points (Max 25). Tag them. Detect Sentiment (Positive, Frustrated, Burned Out). Output JSON."
@@ -88,7 +87,7 @@ _Strict Rule: Never monetize Core Progression (No Pay-to-Win)._
 
 ```bash
 # Clone the repository
-git clone [https://github.com/your-username/founders-rpg.git](https://github.com/your-username/founders-rpg.git)
+git clone https://github.com/HarmishTervadiya/FoundersMode.git
 
 # Install dependencies
 npm install

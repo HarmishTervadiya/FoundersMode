@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Supabase generated types (UTF-16 encoded, skip formatting)
+types/supabase.types.ts
+
+# Expo generated files
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build outputs
+android/
+ios/
+
+# Generated files
+*.tsbuildinfo
+*.orig.*
+
+# Certificates & keys
+certs/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Env files
+.env
+.env*.local
+
+# Assets (binary files)
+assets/
+
+# Config files that shouldn't be formatted
+google-services.json
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# VS Code extension build
+vscode-theme-extension/
+vscode-theme-extension.zip
+
+# Metro cache
+.metro-health-check*
+
+# macOS
+.DS_Store

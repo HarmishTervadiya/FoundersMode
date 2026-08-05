@@ -1,25 +1,26 @@
 {
   "expo": {
-    "name": "FounderMode",
+    "name": "FoundersMode",
     "slug": "foundersmode",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/app-icons/ios/AppIcon~ios-marketing.png",
     "scheme": "foundersmode",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#050505",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "backgroundColor": "#050505"
     },
     "android": {
+      "backgroundColor": "#050505",
       "adaptiveIcon": {
-        "backgroundColor": "#050505",
-        "foregroundImage": "./assets/images/android-icon-foreground.png"
+        "foregroundImage": "./assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
+        "backgroundImage": "./assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_background.png",
+        "monochromeImage": "./assets/app-icons/android/mipmap-xxxhdpi/ic_launcher_monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "googleServicesFile": "./google-services.json",
-      "package": "com.harmis8469.FoundersMode"
+      "package": "com.foundersmode.app"
     },
     "web": {
       "output": "static",
@@ -30,10 +31,19 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/app-icons/play_store_512.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#050505"
+          "backgroundColor": "#000000"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/app-icons/notification-icon.png",
+          "color": "#050505",
+          "defaultChannel": "default",
+          "sounds": []
         }
       ],
       "expo-web-browser",

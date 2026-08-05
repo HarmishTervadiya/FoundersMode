@@ -2,24 +2,30 @@ import React from 'react';
 import { Text, TextProps, View } from 'react-native';
 
 interface TextRendererProps extends TextProps {
-    children: string;
+  children: string;
 }
 
 export const TextRenderer: React.FC<TextRendererProps> = ({ children, style, ...props }) => {
-    if (!children) return null;
+  if (!children) return null;
 
-    // Split text by escaped newlines literals or actual newlines
-    const lines = children.split(/\\n|\n/);
+  // Normalize: convert literal escaped '\n' (two chars: backslash + n) that Supabase
+  // returns when content was concatenated and stored, into real newline characters.
+  // Then split on real newlines.
+  const normalized = children.replace(/\\n/g, '\n');
+  const lines = normalized.split('\n');
 
-    return (
-        <View>
-            {lines.map((line, index) => (
-                <Text key={index} style={style} {...props}>
-                    {line.trim()}
-                    {/* Add a small spacer if it's not the last line to simulate paragraph gap if needed, 
-              or just rely on natural block text behavior. Here we just render line by line. */}
-                </Text>
-            ))}
-        </View>
-    );
+  return (
+    <View>
+      {lines.map((line, index) =>
+        line.trim() === '' ? (
+          // Empty line → render a small vertical gap instead of invisible nothing
+          <View key={index} style={{ height: 6 }} />
+        ) : (
+          <Text key={index} style={style} {...props}>
+            {line}
+          </Text>
+        )
+      )}
+    </View>
+  );
 };

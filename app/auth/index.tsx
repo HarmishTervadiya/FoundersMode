@@ -1,14 +1,13 @@
 /**
  * Onboarding Screen
- * 
+ *
  * 3-step onboarding flow with themed UI, animations, and store integration.
- * Uses SafeAreaView from react-native-safe-area-context (not deprecated RN version).
  */
 
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Pressable, Text, View } from 'react-native';
+import { Dimensions, Linking, Pressable, Text, View } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -27,7 +26,7 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Colors } from '@/constants/theme';
 import { ONBOARDING_STEPS } from '@/constants/theme.config';
-import { useTheme } from '@/hooks/useTheme';  
+import { useTheme } from '@/hooks/useTheme';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { soundService } from '@/utils/soundService';
 
@@ -35,7 +34,17 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Animated particle component
 // Animated particle component
-function Particle({ delay, startX, startY, color }: { delay: number; startX: number; startY: number; color: string }) {
+function Particle({
+  delay,
+  startX,
+  startY,
+  color,
+}: {
+  delay: number;
+  startX: number;
+  startY: number;
+  color: string;
+}) {
   const translateY = useSharedValue(0);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0.3);
@@ -59,10 +68,7 @@ function Particle({ delay, startX, startY, color }: { delay: number; startX: num
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY.value },
-      { translateX: translateX.value },
-    ],
+    transform: [{ translateY: translateY.value }, { translateX: translateX.value }],
     opacity: opacity.value,
   }));
 
@@ -144,21 +150,24 @@ export default function OnboardingScreen() {
   const Icon = step.icon;
   const terminalText = useTypingAnimation(step.terminal);
 
-  const changeStep = useCallback((direction: number) => {
-    const nextStep = currentStep + direction;
-    if (nextStep >= 0 && nextStep < totalSteps) {
-      setIsVisible(false);
-      setTimeout(() => {
-        soundService.play('onboarding_click');
-        setStep(nextStep);
-        setIsVisible(true);
-      }, 300); // Wait for FadeOut
-    } else if (nextStep >= totalSteps) {
-      // Complete if going past last step
-      completeOnboarding();
-      router.replace('/auth/login');
-    }
-  }, [currentStep, totalSteps, setStep, completeOnboarding, router]);
+  const changeStep = useCallback(
+    (direction: number) => {
+      const nextStep = currentStep + direction;
+      if (nextStep >= 0 && nextStep < totalSteps) {
+        setIsVisible(false);
+        setTimeout(() => {
+          soundService.play('onboarding_click');
+          setStep(nextStep);
+          setIsVisible(true);
+        }, 300); // Wait for FadeOut
+      } else if (nextStep >= totalSteps) {
+        // Complete if going past last step
+        completeOnboarding();
+        router.replace('/auth/login');
+      }
+    },
+    [currentStep, totalSteps, setStep, completeOnboarding, router]
+  );
 
   const handleNext = () => changeStep(1);
   const handleBack = () => changeStep(-1); // Not explicitly requested but good for swipe
@@ -194,8 +203,8 @@ export default function OnboardingScreen() {
         <ParticlesBackground color={accentColor} />
 
         {/* Top System Bar */}
-        <View className="px-6 pt-4 pb-4 z-10">
-          <Text className="text-xs tracking-widest mb-4 font-bold text-text-primary">
+        <View className="z-10 px-6 pb-4 pt-4">
+          <Text className="mb-4 text-xs font-bold tracking-widest text-text-primary">
             ◢ SECURE FACILITY // ONBOARDING PROTOCOL ◣
           </Text>
           <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
@@ -206,14 +215,14 @@ export default function OnboardingScreen() {
           <Animated.View
             entering={FadeIn.duration(300).easing(Easing.out(Easing.cubic))}
             exiting={FadeOut.duration(300).easing(Easing.in(Easing.cubic))}
-            className="flex-1 items-center justify-center px-6 z-10"
+            className="z-10 flex-1 items-center justify-center px-6"
           >
             {/* Terminal Status */}
             <View className="mb-8 items-center">
-              <Text className="text-sm tracking-wider mb-1 font-bold text-text-dim/40">
+              <Text className="mb-1 text-sm font-bold tracking-wider text-text-dim/40">
                 [ SYSTEM STATUS ]
               </Text>
-              <Text className="text-lg font-bold tracking-wide text-text-primary font-mono">
+              <Text className="font-mono text-lg font-bold tracking-wide text-text-primary">
                 {terminalText}
                 <Text className="opacity-50">_</Text>
               </Text>
@@ -222,26 +231,34 @@ export default function OnboardingScreen() {
             {/* Icon with glow effect */}
             <View className="relative mb-10">
               <ThemedCard padding="lg" cornerSize="lg">
-                <Icon size={64} className="text-text-primary" stroke={accentColor} strokeWidth={2} />
+                <Icon
+                  size={64}
+                  className="text-text-primary"
+                  stroke={accentColor}
+                  strokeWidth={2}
+                />
               </ThemedCard>
             </View>
 
             {/* Title */}
-            <Text className="text-2xl text-center mb-4 leading-tight tracking-wider font-bold text-text-primary">
+            <Text className="mb-4 text-center text-2xl font-bold leading-tight tracking-wider text-text-primary">
               {step.title}
             </Text>
 
             {/* Subtitle */}
-            <Text className="text-center text-base mb-6 leading-relaxed text-text-muted/80 max-w-xs">
+            <Text className="mb-6 max-w-xs text-center text-base leading-relaxed text-text-muted/80">
               {step.subtitle}
             </Text>
 
             {/* Highlight Comment */}
 
-            <View className="relative bg-bg-card/70 w-2/3 border-2 border-accent/30 px-7 py-3 overflow-hidden" style={{ borderTopLeftRadius: 15, borderBottomRightRadius: 15 }}>
-              <View className="absolute top-0 left-0 w-3 h-3 bg-accent" />
-              <View className="absolute bottom-0 right-0 w-3 h-3 bg-accent" />
-              <Text className="text-sm tracking-normal text-nowrap font-mono text-text-primary  mx-3">
+            <View
+              className="relative w-2/3 overflow-hidden border-2 border-accent/30 bg-bg-card/70 px-7 py-3"
+              style={{ borderTopLeftRadius: 15, borderBottomRightRadius: 15 }}
+            >
+              <View className="absolute left-0 top-0 h-3 w-3 bg-accent" />
+              <View className="absolute bottom-0 right-0 h-3 w-3 bg-accent" />
+              <Text className="mx-3 text-nowrap font-mono text-sm tracking-normal  text-text-primary">
                 {step.highlight}
               </Text>
             </View>
@@ -254,28 +271,53 @@ export default function OnboardingScreen() {
         )}
 
         {/* Bottom Actions */}
-        <View className="p-6 gap-3 z-10">
+        <View className="z-10 gap-3 p-6">
           {!isLastStep ? (
             <>
               <ThemedButton
                 onPress={handleNext}
                 variant="primary"
-                cornerSize='lg'
+                cornerSize="lg"
                 icon={<ChevronRight size={20} className="text-text-primary" />}
               >
                 [ Continue Protocol ]
               </ThemedButton>
 
               <Pressable onPress={handleSkip} className="py-4">
-                <Text className="text-sm text-center tracking-wider text-text-dim/40">
+                <Text className="text-center text-sm tracking-wider text-text-dim/40">
                   [ Skip Sequence ]
                 </Text>
               </Pressable>
             </>
           ) : (
-            <ThemedButton onPress={handleNext} variant="primary">
-              [[ Initialize Vault ]]
-            </ThemedButton>
+            <>
+              <View className="items-center px-4 pb-2">
+                <Text className="text-center font-mono text-xs text-text-dim/50">
+                  {'By continuing, you agree to our '}
+                  <Text
+                    className="font-mono text-xs text-text-primary"
+                    onPress={() =>
+                      Linking.openURL('https://foundersmode.harmistervadiya.dev/privacy')
+                    }
+                  >
+                    Privacy Policy
+                  </Text>
+                  {' and '}
+                  <Text
+                    className="font-mono text-xs text-text-primary"
+                    onPress={() =>
+                      Linking.openURL('https://foundersmode.harmistervadiya.dev/terms')
+                    }
+                  >
+                    Terms of Service
+                  </Text>
+                  {'.'}
+                </Text>
+              </View>
+              <ThemedButton onPress={handleNext} variant="primary">
+                [[ Initialize Vault ]]
+              </ThemedButton>
+            </>
           )}
         </View>
       </SafeAreaView>

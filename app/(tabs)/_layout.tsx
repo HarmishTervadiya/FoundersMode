@@ -13,6 +13,9 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Solid scene background eliminates white flash during any tab switch.
+        // bg-bg-base = #151718 across all themes.
+        sceneStyle: { backgroundColor: themeColors.background },
         // 1. The HUD Container
         tabBarStyle: {
           backgroundColor: themeColors.navBar,
@@ -35,21 +38,21 @@ export default function TabLayout() {
           letterSpacing: 1,
         },
       }}
-      backBehavior='history'
-      
+      backBehavior="history"
     >
-
       <Tabs.Screen
         name="index"
         options={{
           title: 'System',
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}>
+            <View
+              className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}
+            >
               <LayoutDashboard size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
               {/* Active Indicator Dot */}
               {focused && (
                 <View
-                  className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full shadow-sm"
+                  className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full shadow-sm"
                   style={{ backgroundColor: themeColors.accent, shadowColor: themeColors.accent }}
                 />
               )}
@@ -63,7 +66,12 @@ export default function TabLayout() {
         options={{
           title: 'Logs',
           tabBarIcon: ({ color, focused }) => (
-            <ScrollText size={24} color={color} strokeWidth={focused ? 2.5 : 2} style={focused ? {opacity: 1} : {opacity: 0.8}} />
+            <ScrollText
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
+              style={focused ? { opacity: 1 } : { opacity: 0.8 }}
+            />
           ),
         }}
       />
@@ -73,13 +81,14 @@ export default function TabLayout() {
         options={{
           title: 'Identity',
           tabBarIcon: ({ color, focused }) => (
-            <View className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}>
+            <View
+              className={`items-center justify-center ${focused ? 'opacity-100' : 'opacity-50'}`}
+            >
               <User size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
             </View>
           ),
         }}
       />
-
     </Tabs>
   );
 }

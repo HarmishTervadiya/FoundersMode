@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { ThemeKey } from "../constants/theme.config";
-import { storage, STORAGE_KEYS } from "../lib/storage";
+import { create } from 'zustand';
+import { ThemeKey } from '../constants/theme.config';
+import { storage, STORAGE_KEYS } from '../lib/storage';
 
 interface PreferenceState {
   devTheme: ThemeKey | null; // null means utilize default config
